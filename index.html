@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+Test<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulateur Logistique - CATL (V127 Debug & Fix 2)</title>
+    <title>Simulateur Logistique - CATL (VersionTest)</title>
     
     <link rel="icon" href="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/LogoEpurvertpetit.png?raw=true">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -1440,7 +1440,7 @@
             const nomProd = document.getElementById('pName').value || "Producteur Inconnu";
             
             try { 
-                const { data, error } = await supabaseClient.from('tournees_catl').insert([ { nom_producteur: nomProd, data_json: fullData } ]); 
+                const { data, error } = await supabaseClient.from('tournees_test').insert([ { nom_producteur: nomProd, data_json: fullData } ]); 
                 if (error) throw error; 
                 
                 // Cacher la barre sticky en cas de succès
