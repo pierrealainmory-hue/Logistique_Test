@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Logistique - CATL (V127 Debug & Fix 2)</title>
+    
+    <link rel="icon" href="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/LogoEpurvertpetit.png?raw=true">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- CDN Fiable pour SortableJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root { --primary: #2c3e50; --accent: #e67e22; --success: #27ae60; --bg: #f4f7f9; --danger: #e74c3c; --info: #3498db; --lib: #8e44ad; --text: #546e7a; --locked: #bdc3c7; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; background: var(--bg); color: #333; display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 80px; /* Space for sticky bar */ }
+        
+        /* HEADER */
+        .client-header { background: white; padding: 15px 25px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-top: 6px solid var(--success); }
+        .client-identity { display: flex; align-items: center; gap: 25px; }
+        .client-logo { height: 85px; width: auto; display: block; }
+        
+        /* ASSISTANCE */
+        .assistance-box { font-size: 0.85rem; color: var(--text); text-align: right; border-left: 1px solid #ddd; padding-left: 20px; line-height: 1.5; }
+        .assistance-title { font-weight: 800; color: var(--accent); text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .assistance-box a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
+        .assistance-box a:hover { color: var(--accent); text-decoration: underline; }
+
+        /* BANDEAUX */
+        .header-band { background: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 6px solid var(--primary); transition: all 0.4s ease; position: relative; z-index: 100; }
+        .header-band.validated { border-top-color: var(--success); background-color: #f6fffa; box-shadow: 0 4px 20px rgba(39, 174, 96, 0.15); }
+        .header-row { display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid #eef2f7; }
+        
+        .section-title { font-size: 0.8rem; color: var(--primary); font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; width: 100%; display: block; margin-bottom: 5px; }
+
+        /* FORM */
+        .form-group { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 100px; position: relative; }
+        .form-group label { font-weight: 600; color: var(--text); font-size: 0.75rem; }
+        input[type="text"], input[type="number"], input[type="email"], select { padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 0.9rem; width: 100%; box-sizing: border-box; transition: border 0.3s; }
+        .input-valid { border-color: var(--success) !important; background-color: #fff !important; }
+        .input-error { border-color: var(--danger) !important; background-color: #fff5f5 !important; }
+
+        /* MULTI-SELECT */
+        .multiselect-input { padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; background: white; cursor: pointer; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #777; }
+        .multiselect-input.has-value { color: #333; }
+        .multiselect-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #dcdfe6; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
+        .multiselect-dropdown label { display: block; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f9f9f9; font-weight: normal; color: #333; }
+        .multiselect-dropdown label:hover { background-color: #f1f1f1; }
+        .multiselect-dropdown input { width: auto; margin-right: 8px; }
+
+        /* INFRA */
+        .infra-block { display: flex; justify-content: space-between; gap: 15px; width: 100%; flex-wrap: wrap; }
+        .infra-item { flex: 1; min-width: 140px; background: #fff; padding: 8px; border-radius: 4px; border:1px solid #f0f0f0; }
+        .infra-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .infra-label { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--text); }
+        .infra-label svg { stroke: var(--primary); }
+        .infra-val { font-weight: bold; color: var(--info); font-size: 0.9rem; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: var(--info); }
+        
+        /* AUTOCOMPLETE */
+        .autocomplete-items { position: absolute; border: 1px solid #d4d4d4; border-bottom: none; border-top: none; z-index: 10000; top: 100%; left: 0; right: 0; background-color: #fff; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .autocomplete-items div { padding: 10px; cursor: pointer; background-color: #fff; border-bottom: 1px solid #d4d4d4; font-size: 0.85rem; }
+        .autocomplete-items div:hover { background-color: #e9e9e9; }
+
+        /* BOUTONS & STYLE NOUVELLE TOURNEE */
+        .btn-mini { border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: opacity 0.2s; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-mini:hover { opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        .btn-new-tour {
+            background: white;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-new-tour:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(230, 126, 34, 0.2);
+        }
+
+        #btn-validate-depot { background: var(--success); color: white; margin-top: 25px; width: auto; min-width: 200px; display: block; margin-left: auto; margin-right: auto; border: none; border-radius: 20px; padding: 12px 40px; font-weight: bold; font-size: 1rem; opacity: 0.5; cursor: not-allowed; transition: all 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #btn-validate-depot.active { opacity: 1; cursor: pointer; transform: translateY(-1px); }
+        
+        #header-summary { display: none; align-items: center; justify-content: space-between; }
+        .summary-text { font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .summary-text span { display: flex; align-items: center; gap: 5px; }
+        
+        /* LAYOUT & MAP */
+        .main-container { display: flex; gap: 25px; flex: 1; margin-bottom: 30px;}
+        .left-panel { flex: 1; min-width: 420px; transition: opacity 0.3s; position: relative; }
+        .right-panel { flex: 2; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* ZONES BLOQUEES (Fix UX) */
+        .blocked-area { 
+            opacity: 0.5; 
+            filter: grayscale(100%); 
+            position: relative; /* Pour positionner l'overlay */
+        }
+        
+        /* Overlay invisible pour intercepter les clics sur la zone bloquée */
+        .block-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 999;
+            cursor: not-allowed;
+            display: none;
+        }
+        .blocked-area .block-overlay {
+            display: block;
+        }
+
+        #map { height: 450px; width: 100%; border-radius: 6px; border: 1px solid #dcdfe6; background-color: #e5e9ec; display: block; z-index: 1; }
+        .map-num-icon { background: var(--info); color: white; border-radius: 50%; text-align: center; line-height: 24px; font-weight: bold; font-size: 14px; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
+
+        /* KPI & LISTS */
+        .kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .kpi-card { background: white; padding: 15px; border-radius: 6px; border: 1px solid #e4e7ed; text-align: center; }
+        .kpi-title { font-size: 0.7rem; font-weight: 700; color: var(--text); text-transform: uppercase; margin-bottom: 5px; }
+        .kpi-value { font-size: 1.2rem; font-weight: 800; color: var(--primary); transition: color 0.3s; }
+        .summary-banner { grid-column: span 3; background: var(--primary); color: white; border-radius: 6px; padding: 15px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .banner-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+        .banner-metrics { display: flex; justify-content: space-around; width: 100%; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+        .summary-value { font-size: 1.8rem; font-weight: 800; display: block; }
+        
+        #stops-list { list-style: none; padding: 0; min-height: 50px; }
+        .stop-item { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #ebedf0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stop-content { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; }
+        .stop-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; flex:1; }
+        .stop-name { font-weight: bold; font-size: 0.95rem; }
+        .stop-addr { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stop-meta { text-align: right; margin-right: 15px; min-width: 130px; display: flex; flex-direction: column; align-items: flex-end; }
+        .stop-euro { font-weight: bold; color: var(--success); font-size: 0.9rem; }
+        .stop-dist-tag { font-size: 0.75rem; color: #95a5a6; }
+        .ratio-tag { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-top: 2px; white-space: nowrap; }
+        .ratio-good { background: #d5f5e3; color: #27ae60; border: 1px solid #27ae60; }
+        .ratio-mid { background: #fdebd0; color: #e67e22; border: 1px solid #e67e22; }
+        .ratio-bad { background: #fadbd8; color: #e74c3c; border: 1px solid #e74c3c; }
+        .stop-actions { display: flex; gap: 2px; }
+        .btn-icon { border: none; background: none; cursor: pointer; font-size: 1.1rem; padding: 5px; border-radius: 4px; }
+        .btn-icon:hover { background-color: #f0f0f0; }
+        .handle { cursor: grab; color: #b0bec5; font-size: 1.5rem; margin-right: 10px; padding: 5px; }
+        .return-item { background: #f8f9fa; border-left: 4px solid var(--primary); }
+        .return-item .stop-name { color: var(--primary); }
+        #tours-list-container { max-height: 400px; overflow-y: auto; margin-bottom: 5px; border: 1px solid #eee; border-radius: 4px; }
+        .tour-row { padding: 15px; border-bottom: 1px solid #eee; background: #fff; display: grid; grid-template-columns: 2fr 4fr 3fr 100px; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .tour-row:hover { background: #f9f9f9; }
+        .tour-row.active { background: #f4ecf7; border-left: 4px solid var(--lib); }
+        .t-id { font-size: 1rem; font-weight: bold; color: var(--primary); }
+        .t-day { font-size: 0.8rem; color: #7f8c8d; }
+        .t-metrics { display: flex; gap: 15px; font-size: 0.9rem; color: #333; font-weight: 500; }
+        .t-preview { font-size: 0.8rem; color: #95a5a6; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 20px;}
+        .t-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        /* STATS GLOBALES (Dossier) - NOUVEAU STYLE */
+        .global-stats-box {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #eef2f7;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .gs-item {
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+            padding: 5px;
+            border-right: 1px solid #e0e0e0;
+        }
+        .gs-item:last-child {
+            border-right: none;
+        }
+        .gs-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        .gs-value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .btn-main { background: var(--info); color: white; width: 100%; padding: 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top:20px; }
+        #btn-save-local { background: var(--success); color: white; margin-top: 10px; width: 100%; border: none; border-radius: 6px; padding: 15px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #btn-export-project { background: var(--lib); color: white; width: 300px; margin: 0 auto; border: none; border-radius: 4px; padding: 15px; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .backup-controls { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .btn-backup { background: #bdc3c7; color: white; font-size: 0.8rem; }
+        .dix-footer { margin-top: 40px; padding: 20px; background: white; border-radius: 6px; display: flex; justify-content: center; align-items: center; gap: 15px; color: #7f8c8d; font-size: 0.9rem; flex-direction: column; }
+        .dix-logo-small { height: 45px; width: auto; vertical-align: middle; }
+
+        /* STICKY BOTTOM BAR FOR SUBMISSION (UX IMPROVEMENT) */
+        .sticky-send-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-top: 4px solid var(--lib);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            padding: 15px 20px;
+            z-index: 9000;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
+        .sticky-text { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
+        .btn-sticky-send {
+            background: var(--lib);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+            animation: pulse 2s infinite;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(142, 68, 173, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(142, 68, 173, 0); }
+        }
+
+
+        /* MODALS */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from {transform: translateY(-50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
+        .modal-header { font-size: 1.3rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .modal-body { font-size: 0.95rem; color: #333; line-height: 1.6; margin-bottom: 25px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 15px; }
+        .btn-cancel { background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-confirm { background: var(--lib); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-confirm:hover { background: #7d3c98; }
+        
+        .legend-bar { background: white; border-radius: 6px; border: 1px solid #eee; padding: 8px; margin-top: 10px; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; font-size: 0.75rem; color: var(--text); }
+        .legend-tag-title { background: #f8f9fa; border: 1px solid #ddd; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 5px; color: var(--primary); }
+        .legend-item { display: flex; align-items: center; gap: 5px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
+        /* TOAST NOTIFICATION */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 10000;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+    <div class="client-header">
+        <div class="client-identity">
+            <!-- LOGO  -->
+            <img src="https://www.catl.be/wp-content/uploads/2022/06/CATL_logo_Pano_Vert_Synthese-1.png" alt="Logo " class="client-logo">
+            <div>
+                <!-- TITRE  -->
+                <h1 style="margin:0; font-size:1.6rem; color:var(--success);"> (Ceinture Aliment-Terre Liegeoise)</h1>
+                <span style="color:var(--text); font-size:1rem;">Simulateur de Logistique en Circuit Court</span>
+            </div>
+        </div>
+        
+        <!-- CONTACT BOX -->
+        <div class="assistance-box">
+            <span class="assistance-title">ASSISTANCE TECHNIQUE</span>
+            <b>Pierre-Alain Mory</b><br>
+            <a href="mailto:pierre.alain.mory@dix-autrement.fr">pierre.alain.mory@dix-autrement.fr</a><br>
+            <span>📞 07 83 00 09 56</span><br>
+            <a href="http://www.dix-autrement.fr" target="_blank">www.dix-autrement.fr</a>
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="margin:0; font-size:1.2rem; color:#7f8c8d;">Configuration de la Tournée</h2>
+        <button onclick="resetAll()" class="btn-mini" style="background:var(--danger);">Réinitialiser Tout</button>
+    </div>
+
+    <div class="header-band" id="prod-band">
+        <div id="header-form">
+            <!-- LIGNE 1 : NOM + METIER -->
+            <div class="header-row">
+                <div class="form-group" style="flex: 1.5;">
+                    <label>Nom de la ferme ou du point de départ *</label>
+                    <input type="text" id="pName" placeholder="Ex: Ferme du Soleil" oninput="checkProducerValidation()">
+                </div>
+                <div class="form-group" style="flex: 1.5; position: relative;">
+                    <label>🌾 Métiers (Plusieurs possibles)</label>
+                    <div id="pJobDisplay" class="multiselect-input" onclick="toggleJobMenu()">-- Choisir --</div>
+                    <div id="pJobMenu" class="multiselect-dropdown">
+                        <label><input type="checkbox" value="Maraîchage" onchange="updateJobSelection()"> Maraîchage</label>
+                        <label><input type="checkbox" value="Céréales panifiables" onchange="updateJobSelection()"> Céréales panifiables</label>
+                        <label><input type="checkbox" value="Grandes cultures (céréales)" onchange="updateJobSelection()"> Grandes cultures (céréales)</label>
+                        <label><input type="checkbox" value="Fruiticulture" onchange="updateJobSelection()"> Fruiticulture</label>
+                        <label><input type="checkbox" value="Bovins laitiers" onchange="updateJobSelection()"> Bovins laitiers</label>
+                        <label><input type="checkbox" value="Ovins Laitiers" onchange="updateJobSelection()"> Ovins Laitiers</label>
+                        <label><input type="checkbox" value="Caprins Laitiers" onchange="updateJobSelection()"> Caprins Laitiers</label>
+                        <label><input type="checkbox" value="Viande Bovine" onchange="updateJobSelection()"> Viande Bovine</label>
+                        <label><input type="checkbox" value="Viande Ovine" onchange="updateJobSelection()"> Viande Ovine</label>
+                        <label><input type="checkbox" value="Viande porcine" onchange="updateJobSelection()"> Viande porcine</label>
+                        <label><input type="checkbox" value="Cuniculture" onchange="updateJobSelection()"> Cuniculture</label>
+                        <label><input type="checkbox" value="Aviculture viandes" onchange="updateJobSelection()"> Aviculture viandes</label>
+                        <label><input type="checkbox" value="Aviculture oeufs" onchange="updateJobSelection()"> Aviculture oeufs</label>
+                        <label><input type="checkbox" value="Viande caprine" onchange="updateJobSelection()"> Viande caprine</label>
+                        <label><input type="checkbox" value="Floriculture/Herboristerie" onchange="updateJobSelection()"> Floriculture/Herboristerie</label>
+                        <label><input type="checkbox" value="Apiculture" onchange="updateJobSelection()"> Apiculture</label>
+                        <label><input type="checkbox" value="Aquaculture (poissons)" onchange="updateJobSelection()"> Aquaculture (poissons)</label>
+                        <label><input type="checkbox" value="Myciculture (Champignons)" onchange="updateJobSelection()"> Myciculture (Champignons)</label>
+                        <label><input type="checkbox" value="Héliciculture" onchange="updateJobSelection()"> Héliciculture</label>
+                        <label><input type="checkbox" value="Arboriculture Forestière" onchange="updateJobSelection()"> Arboriculture Forestière</label>
+                        <label><input type="checkbox" value="Autres" onchange="updateJobSelection()"> Autres</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIGNE 2 : EMAIL + ADRESSE -->
+            <div class="header-row">
+                <div class="form-group" style="flex: 1;">
+                    <label>📧 Email de contact</label>
+                    <input type="email" id="pMail" placeholder="contact@ferme.com" onchange="saveDepot()">
+                </div>
+                <div class="form-group" style="flex: 2;">
+                    <label>📍 Adresse du Dépôt *</label>
+                    <div style="display:flex; gap:5px;">
+                        <div style="flex:1; position:relative;">
+                            <input type="text" id="pAddr" placeholder="Tapez une adresse (ex: Rue des Guillemins, Liège)" oninput="handleAddressInput(event, 'prod')">
+                            <div id="pAddr-list" class="autocomplete-items"></div>
+                        </div>
+                        <button class="btn-mini" style="background:var(--info);" onclick="searchAddress('prod')">🔍</button>
+                        <button class="btn-mini" id="btn-t-prod" style="background:#95a5a6;" onclick="setMode('prod')">🎯</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BLOC PARAMETRES TRANSPORT -->
+            <div class="header-row" style="background: #f8f9fa; padding: 10px; border-radius: 4px; border: 1px solid #eee; flex-direction:column; gap:10px;">
+                <label class="section-title">🚚 Paramètres Transport</label>
+                <div style="display:flex; gap:10px; width:100%; flex-wrap:wrap; align-items: flex-end;">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Type de Véhicule</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <select id="vType" onchange="saveDepot()" style="flex:1;">
+                                <option>Petit utilitaire (< 3m³)</option>
+                                <option selected>Fourgon compact (3-6m³)</option>
+                                <option>Grand fourgon (6-12m³)</option>
+                                <option>Petit camion (12-20m³)</option>
+                                <option>Camion lourd (> 20m³)</option>
+                            </select>
+                            <label style="font-size:0.9rem; cursor:pointer; color:var(--info); font-weight:bold; white-space:nowrap; display:flex; align-items:center; background:white; padding:8px; border:1px solid #dcdfe6; border-radius:4px;" title="Cochez si véhicule réfrigéré">
+                                <input type="checkbox" id="vFrigo" onchange="saveDepot()" style="margin:0 5px 0 0;"> ❄️ Frigo
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>⛽ Énergie</label><select id="fType" onchange="updateView()"><option>Diesel</option><option>Essence</option><option>Électrique</option><option>GNV / Gaz</option><option>Hybride</option></select></div>
+                    <div class="form-group"><label>💧 Conso. (L/100km) ou (kwH/100 km)</label><input type="number" id="vCons" value="8.5" step="0.1" onchange="updateView()"></div>
+                    <div class="form-group"><label>💳 Prix (€/L) ou (€/kwH) </label><input type="number" id="fPrice" value="1.75" step="0.01" onchange="updateView()"></div>
+                    <div class="form-group"><label title="Coût d'usure, pneus, entretien, assurance ramené au km">🔧 Amort. / Entretien Véhicule (€/km)</label><input type="number" id="vAmort" value="0.25" step="0.01" onchange="updateView()"></div>
+                </div>
+            </div>
+
+            <!-- BLOC ORGANISATION LOGISTIQUE -->
+            <div class="header-row" style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #eee; flex-direction:column; gap:10px;">
+                 <label class="section-title">👤 Organisation Logistique</label>
+                 <div style="display:flex; gap:10px; width:100%; flex-wrap:wrap; align-items: flex-end;">
+                    <div class="form-group" style="flex: 1.2;">
+                        <label>Qui livre ?</label>
+                        <select id="driverType" style="font-weight:bold; color:var(--primary);"><option>Producteur.rice (Soi-même)</option><option>Salarié</option><option>Prestataire Extérieur</option></select>
+                    </div>
+                    <div class="form-group"><label>💶 Coût Personnel Chargé (€/h)</label><input type="number" id="cH" value="18" onchange="updateView()"></div>
+                    <div class="form-group"><label>📦 Temps de Préparation (min)</label><input type="number" id="tPrep" value="30" onchange="updateView()"></div>
+                    <div class="form-group"><label>⏱️ Temps de Chargement (min)</label><input type="number" id="tLoad" value="20" onchange="updateView()"></div>
+                </div>
+            </div>
+            
+            <!-- BLOC ESPACES DE TRAVAIL -->
+            <div class="header-row" style="background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #eee; flex-direction:column; gap:10px; margin-top:10px;">
+                <label class="section-title">🏭 Espaces de travail et surfaces</label>
+                <div class="infra-block">
+                    <div class="infra-item">
+                        <div class="infra-header">
+                            <span class="infra-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M4 4v16"/><path d="M20 4v16"/><path d="M4 9h16"/><path d="M4 14h16"/><rect x="6" y="5" width="4" height="4"/><rect x="12" y="10" width="4" height="4"/></svg> Stockage Sec</span>
+                            <strong id="val-sec" class="infra-val">0 m²</strong>
+                        </div>
+                        <input type="range" id="surfSec" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('sec', this.value); saveDepot()">
+                    </div>
+                    <div class="infra-item">
+                        <div class="infra-header">
+                            <span class="infra-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14"/><path d="M15 14v4"/></svg> Stockage Frais</span>
+                            <strong id="val-frais" class="infra-val">0 m²</strong>
+                        </div>
+                        <input type="range" id="surfFrais" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('frais', this.value); saveDepot()">
+                    </div>
+                    <div class="infra-item">
+                        <div class="infra-header">
+                            <span class="infra-label">🧊 Stock. Négatif (T°<0°)</span>
+                            <strong id="val-neg" class="infra-val">0 m²</strong>
+                        </div>
+                        <input type="range" id="surfNeg" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('neg', this.value); saveDepot()">
+                    </div>
+                    <div class="infra-item">
+                        <div class="infra-header">
+                            <span class="infra-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15h20"/><path d="M4 15v6"/><path d="M20 15v6"/><rect x="4" y="8" width="6" height="7"/><rect x="12" y="6" width="6" height="9"/></svg> Espace Prépa.</span>
+                            <strong id="val-prep" class="infra-val">0 m²</strong>
+                        </div>
+                        <input type="range" id="surfPrep" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('prep', this.value); saveDepot()">
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-validate-depot" onclick="lockDepot()">✅ Valider le Dépôt & Passer aux Arrêts</button>
+        </div>
+        
+        <div id="header-summary">
+            <div class="summary-text" id="summary-content">...</div>
+            <button class="btn-mini" style="background:var(--info);" onclick="unlockDepot()">Modifier ✏️</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="left-panel blocked-area" id="locked-section">
+            <div class="block-overlay" onclick="alertValiderDepot()"></div>
+            
+            <div class="card" style="border-left: 6px solid var(--accent); margin-bottom: 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--accent);">📅 Édition de la Tournée</h3>
+                    <button class="btn-new-tour" onclick="newTour()">➕ Nouvelle Tournée</button>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <div class="form-group" style="flex: 1.5;">
+                        <label>Nom de la Tournée *</label>
+                        <input type="text" id="tName" list="tourNameSuggestions" placeholder="Ex: Tournée des Écoles" oninput="updateStatsTitle()">
+                        <datalist id="tourNameSuggestions"></datalist>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Jour</label>
+                        <select id="tDay" onchange="autoNameTour()">
+                            <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 6px solid var(--success);">
+                <h3 style="margin-top:0; font-size:1.1rem;">📍 Ajouter un Arrêt</h3>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <div class="form-group" style="flex:1.5;"><label>Nom / Lieu</label><input type="text" id="sClient" placeholder="Ex: Restaurant Chez Paul"></div>
+                    <div class="form-group" style="flex:1;"><label>Opération</label><select id="sOpType"><option value="📦">📦 Livraison Client</option><option value="🚜">🚜 Collecte</option><option value="🏬">🏬 Point Relais</option></select></div>
+                </div>
+                <div class="form-group">
+                    <label>Localisation</label>
+                    <div style="display:flex; gap:5px;">
+                        <div style="flex:1; position:relative;">
+                            <input type="text" id="sAddr" placeholder="Adresse du client..." oninput="handleAddressInput(event, 'stop')">
+                            <div id="sAddr-list" class="autocomplete-items"></div>
+                        </div>
+                        <button class="btn-mini" style="background:var(--info);" onclick="searchAddress('stop')">🔍</button>
+                        <button class="btn-mini" id="btn-t-stop" style="background:#95a5a6;" onclick="setMode('stop')">🎯</button>
+                    </div>
+                </div>
+                <!-- VOLUME KG REMOVED -->
+                <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+                    <div class="form-group"><label>Valeur March. (€)</label><input type="number" id="sEuro" value="0"></div>
+                    <!-- VOLUME KG REMOVED -->
+                    <div class="form-group"><label>Temps Arrêt (min)</label><input type="number" id="sTime" value="15"></div>
+                </div>
+                
+                <button class="btn-main" style="background:var(--info); margin-top:20px;" onclick="addStop()">➕ Ajouter à la tournée</button>
+            </div>
+            
+            <h4 style="color:var(--text);">📋 Ordre de passage (Drag & Drop)</h4>
+            <ul id="stops-list"></ul>
+            
+            <div class="legend-bar">
+                <span class="legend-tag-title">Légende Ratio :</span>
+                <div class="legend-item ratio-good" style="padding: 2px 8px; border-radius: 4px;">< 10%</div>
+                <div class="legend-item ratio-mid" style="padding: 2px 8px; border-radius: 4px;">10-30%</div>
+                <div class="legend-item ratio-bad" style="padding: 2px 8px; border-radius: 4px;">> 30%</div>
+            </div>
+
+            <button id="btn-save-local" onclick="saveCurrentTour()">💾 SAUVEGARDER CETTE TOURNÉE</button>
+        </div>
+
+        <div class="right-panel">
+            <div id="map"></div>
+            <div class="kpi-container">
+                <div class="summary-banner">
+                    <div class="banner-header"><span style="font-size:1.4rem;">📝</span><span id="kpi-tour-title" style="font-weight:700;">RÉCAPITULATIF GLOBAL</span></div>
+                    <div class="banner-metrics">
+                        <div><small style="opacity:0.8">COÛT TOTAL TOURNÉE</small><br><span class="summary-value" id="rTotal">0 €</span></div>
+                        <div><small style="opacity:0.8">CA TOTAL TOURNÉE</small><br><span class="summary-value" id="rVal">0 €</span></div>
+                    </div>
+                </div>
+                <div class="kpi-card"><div class="kpi-title">Distance & Route</div><div class="kpi-value" id="rDist">0 km</div><div style="font-size:0.7rem;" id="rTime">0h00 conduite</div></div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-title">Frais Véhicule</div>
+                    <div class="kpi-value" id="rCostTrans">0 €</div>
+                    <div style="font-size:0.6rem; color:var(--text);">Carburant + Amort.</div>
+                </div>
+
+                <div class="kpi-card"><div class="kpi-title">Frais Personnel</div><div class="kpi-value" id="rCostOps">0 €</div><div style="font-size:0.7rem;" id="rOps">0h00 service</div></div>
+                <div class="kpi-card" style="grid-column: span 3; border-top: 3px solid var(--accent);">
+                    <div class="kpi-title">RATIO LOGISTIQUE</div>
+                    <div class="kpi-value" style="color:var(--accent); font-size:1.8rem;" id="rRatio">0 %</div>
+                    <div style="font-size:0.7rem; color:var(--text);">(Coût Logistique / Chiffre d'Affaires)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="border-left: 6px solid var(--lib); margin-top:30px; margin-bottom: 60px;">
+        <h3 style="margin-top:0; font-size:1.2rem; color:var(--lib); margin-bottom:15px;">📂 Mes Tournées Enregistrées (Dossier Complet)</h3>
+        
+        <div id="global-totals-container" class="global-stats-box" style="display:none;">
+            <div class="gs-item"><div class="gs-label">💰 CA TOTAL</div><div class="gs-value" id="gt-ca">0 €</div></div>
+            <div class="gs-item"><div class="gs-label">📉 COÛT TOTAL</div><div class="gs-value" id="gt-cost">0 €</div></div>
+            <div class="gs-item"><div class="gs-label">⚖️ RATIO GLOBAL</div><div class="gs-value" id="gt-ratio" style="color:var(--accent);">0 %</div></div>
+            <div class="gs-item"><div class="gs-label">🛣️ DISTANCE</div><div class="gs-value" id="gt-dist">0 km</div></div>
+            <div class="gs-item"><div class="gs-label">⏱️ TEMPS</div><div class="gs-value" id="gt-time">0h00</div></div>
+        </div>
+
+        <div id="tours-list-container">
+            <div style="padding:20px; color:#999; font-style:italic; text-align:center;">Aucune tournée enregistrée pour l'instant. Utilisez le formulaire ci-dessus.</div>
+        </div>
+        
+        <div class="backup-controls">
+            <button class="btn-mini btn-backup" onclick="downloadBackup()">📥 Sauvegarder mes données (JSON)</button>
+            <button class="btn-mini btn-backup" onclick="document.getElementById('fileInput').click()">📤 Restaurer une sauvegarde</button>
+            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="uploadBackup(this)">
+        </div>
+
+        <div style="display:flex; justify-content:center; margin-top:20px;">
+            <button id="btn-export-project" onclick="openRgpdModal()">🚀 ENVOYER LE PROJET A LA CATL</button>
+        </div>
+    </div>
+    
+    <!-- STICKY BOTTOM BAR (NOUVEAU) -->
+    <div id="sticky-send-bar" class="sticky-send-bar">
+        <span class="sticky-text">🚀 Votre dossier est prêt ?</span>
+        <button class="btn-sticky-send" onclick="openRgpdModal()">
+            CLIQUEZ ICI POUR ENVOYER A LA CATL
+        </button>
+    </div>
+    
+      
+    <!-- PIED DE PAGE AVEC MENTIONS LEGALES -->
+    <div class="dix-footer">
+        <div style="display:flex; align-items: center; gap: 15px;">
+            <span>Outil conçu et réalisé par</span>
+            <a href="http://www.dix-autrement.fr" target="_blank" class="dix-link">
+                <img src="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/logo%20dix%20solutions.jpg?raw=true" alt="Logo DIX Solutions" class="dix-logo-small">
+            </a>
+              
+            <span>| </span>
+            <a href="http://www.dix-autrement.fr" target="_blank" class="dix-link">www.dix-autrement.fr</a>
+             <span>| </span>
+            <!-- COMPTEUR DE VISITE -->
+           <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+            <img src="https://visitor-badge.laobi.icu/badge?page_id=pierrealainmory-hue.logistique-catl &left_text=Visites&left_color=%232c3e50&right_color=%23e67e22" alt="Compteur de visites">
+           </div>
+        </div>
+        <div style="font-size: 0.75rem; color: #95a5a6; margin-top: 10px; text-align: center; line-height: 1.4;">
+            © 2025-2026 Cabinet DIX Autrement. Tous droits réservés.<br>
+            Toute reproduction, copie ou utilisation non autorisée de cet outil ou de son code source est strictement interdite.
+        </div>
+    </div>
+
+    <!-- TOAST ELEMENT -->
+    <div id="toast">✨ Nouvelle tournée créée</div>
+
+    <!-- MODAL SAVE ACTION -->
+    <div id="save-action-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <div class="modal-header" style="color:var(--success); border:none; padding-bottom:0;">✅ Tournée Sauvegardée !</div>
+            <div class="modal-body" style="padding-top:10px;">
+                <p style="font-size:1.1rem; color:#555;">Votre tournée a bien été enregistrée dans le dossier.</p>
+                <p style="margin-bottom:25px;">Que souhaitez-vous faire maintenant ?</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                    <button class="btn-confirm" onclick="closeSaveActionModal()" style="background:white; color:var(--primary); border:2px solid var(--primary); width:80%;">
+                        ✏️ Continuer à modifier cette tournée
+                    </button>
+                    
+                    <button class="btn-confirm" onclick="triggerNewTourFromModal()" style="background:var(--accent); width:80%;">
+                        ➕ Créer une NOUVELLE tournée
+                    </button>
+
+                    <div style="display:flex; align-items:center; width:80%; gap:10px;">
+                        <hr style="flex:1; border-top:1px solid #eee;"> <span style="font-size:0.8rem; color:#999;">OU J'AI FINI</span> <hr style="flex:1; border-top:1px solid #eee;">
+                    </div>
+                    
+                    <!-- NOUVEAU BOUTON D'ACTION DIRECTE -->
+                    <button class="btn-confirm" onclick="triggerSendFromModal()" style="background:var(--lib); width:90%; font-size:1.1rem; padding:15px; border:2px solid var(--lib); box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3);">
+                        🚀 TERMINER & ENVOYER A LA CATL
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RGPD -->
+    <div id="rgpd-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">🛡️ Consentement & Données</div>
+            <div class="modal-body">
+                <p>En soumettant ces données, vous participez à une étude de <strong>diagnostic logistique territorial</strong>.</p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li><strong>Usage :</strong> Optimisation des flux et recherche de solutions mutualisées.</li>
+                    <li><strong>Accès :</strong> Données accessibles uniquement par l'équipe projet et le cabinet DIX AUTREMENT.</li>
+                    <li><strong>Confidentialité :</strong> Vos données ne seront pas divulguées publiquement sans votre accord.</li>
+                </ul>
+                <p>En cliquant sur "J'accepte", vous validez l'utilisation de ces informations dans ce cadre exclusif.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeRgpdModal()">Annuler</button>
+                <button class="btn-confirm" onclick="confirmAndSend()">✅ J'accepte & J'envoie</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL SUCCES & REBOND -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <div class="modal-header" style="color:#27ae60; border:none; padding-bottom:0;">🎉 Transmission Réussie !</div>
+            <div class="modal-body" style="padding-top:10px;">
+                <p style="font-size:1.1rem;">Vos données de tournée ont bien été reçues par la CATL.</p>
+                <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+                <p style="margin-bottom:15px;"><strong>Aidez-nous à aller plus loin :</strong></p>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Seriez-vous d'accord pour préciser quelques informations logistiques supplémentaires via un court formulaire ?</p>
+                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn-confirm" onclick="openFormulaire()" style="background:var(--accent);">📝 Oui, accéder au formulaire</button>
+                    <button class="btn-cancel" onclick="closeSuccessModal()" style="background:#bdc3c7;">Non, merci</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // CONFIGURATION SUPABASE
+        const SUPABASE_URL = 'https://lxoqhmfpnodyfnavmhmn.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_-LPq5CilDsNJcBuOKSG_hw_2nZUZrYg';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let map, markers, routeLayer, stops = [], mode = 'prod', pData = { lat:null, lon:null, addr:"" }, sTemp = { lat:null, lon:null };
+        let lastRouteData = null; 
+        let savedTours = [];
+        let currentTourId = null; 
+        let currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0 };
+        let typingTimer;
+
+        // VARIABLE SORTABLE (V116)
+        let sortableInstance = null;
+
+        window.onload = function() {
+            // CENTRAGE LIEGE
+            map = L.map('map').setView([50.6325, 5.5797], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            markers = L.layerGroup().addTo(map);
+            routeLayer = L.layerGroup().addTo(map);
+            map.on('click', onMapClick);
+            setTimeout(function(){ map.invalidateSize(); }, 500);
+            
+            // FIX: Initialisation propre du sortable une fois le DOM prêt
+            const el = document.getElementById('stops-list');
+            if(el) {
+                Sortable.create(el, { animation: 150, handle: '.handle', onEnd: reorderStops });
+            }
+
+            // Fermeture auto des listes
+            document.addEventListener("click", function (e) { 
+                closeAllLists(e.target);
+                const menu = document.getElementById('pJobMenu');
+                const display = document.getElementById('pJobDisplay');
+                if (menu && display && !menu.contains(e.target) && !display.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+
+            loadGlobalDepot(); 
+            loadToursLibrary(); 
+            setMode('prod'); 
+            checkProducerValidation();
+            autoNameTour();
+            updateTourNameSuggestions();
+        };
+
+        // --- UX HELPER ---
+        function alertValiderDepot() {
+            alert("⚠️ ACTION REQUISE\n\nVeuillez d'abord valider le Dépôt (Formulaire du haut, bouton VERT) avant de pouvoir créer ou éditer une tournée.");
+            document.getElementById('pName').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function showToast(msg) {
+            var x = document.getElementById("toast");
+            x.innerText = msg;
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        // --- MULTI-SELECT ---
+        function toggleJobMenu() { const menu = document.getElementById('pJobMenu'); menu.style.display = (menu.style.display === 'block') ? 'none' : 'block'; }
+        function updateJobSelection() {
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
+            let selected = []; checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.value); });
+            const display = document.getElementById('pJobDisplay');
+            if(selected.length === 0) { display.innerText = "-- Choisir --"; display.classList.remove('has-value'); } 
+            else if(selected.length <= 2) { display.innerText = selected.join(", "); display.classList.add('has-value'); } 
+            else { display.innerText = selected.length + " métiers sélectionnés"; display.classList.add('has-value'); }
+            saveDepot();
+        }
+
+        // --- AUTOCOMPLETE ---
+        function handleAddressInput(e, type) {
+            clearTimeout(typingTimer);
+            const val = e.target.value;
+            const listId = type === 'prod' ? 'pAddr-list' : 'sAddr-list';
+            if (!val || val.length < 3) { document.getElementById(listId).innerHTML = ""; return; }
+            typingTimer = setTimeout(() => {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`)
+                .then(r => r.json()).then(data => {
+                    const list = document.getElementById(listId); list.innerHTML = "";
+                    data.forEach(item => {
+                        const div = document.createElement("div");
+                        div.innerHTML = "📍 " + item.display_name;
+                        div.addEventListener("mousedown", function(e) {
+                            e.preventDefault(); 
+                            selectAddress(item, type, list);
+                        });
+                        list.appendChild(div);
+                    });
+                });
+            }, 300);
+        }
+
+        function selectAddress(item, type, listElement) {
+            const inputId = type === 'prod' ? 'pAddr' : 'sAddr';
+            document.getElementById(inputId).value = item.display_name;
+            listElement.innerHTML = ""; 
+            const lat = parseFloat(item.lat); const lon = parseFloat(item.lon);
+            map.setView([lat, lon], 15);
+            
+            if (type === 'prod') { 
+                pData = { lat: lat, lon: lon, addr: item.display_name }; 
+                checkProducerValidation(); 
+                updateView(); 
+            } else { 
+                sTemp = { lat: lat, lon: lon }; 
+                L.circleMarker([lat, lon], {color:'red'}).addTo(markers); 
+            }
+        }
+        
+        function closeAllLists(elmnt) {
+            const items = document.getElementsByClassName("autocomplete-items");
+            for (let i = 0; i < items.length; i++) { 
+                if (elmnt != items[i] && elmnt != document.getElementById("pAddr") && elmnt != document.getElementById("sAddr")) {
+                    items[i].innerHTML = ""; 
+                }
+            }
+        }
+
+        // --- INFRA ---
+        function updateSurfaceDisplay(type, val) {
+            const el = document.getElementById('val-' + type);
+            if(parseInt(val) >= 200) el.innerText = "> 200 m²";
+            else el.innerText = val + " m²";
+        }
+
+        // --- MAP CLIC ---
+        function onMapClick(e) { 
+            if (mode === 'stop' && document.getElementById('locked-section').classList.contains('blocked-area')) {
+                 // FIX UX: Alert user they need to validate depot first
+                 alertValiderDepot();
+                 return;
+            }
+            
+            let lat = e.latlng.lat, lon = e.latlng.lng; 
+            if(mode === 'prod') {
+                pData = { lat: lat, lon: lon, addr: "Recherche..." };
+                updateView(); 
+            } else {
+                sTemp = { lat: lat, lon: lon };
+                L.circleMarker(e.latlng, {color:'red'}).addTo(markers);
+            }
+
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+            .then(r=>r.json())
+            .then(d=>{ 
+                const addr = d.display_name || "Adresse inconnue";
+                if(mode==='prod'){ 
+                    pData.addr = addr; 
+                    document.getElementById('pAddr').value = addr; 
+                    checkProducerValidation(); 
+                } else { 
+                    document.getElementById('sAddr').value = addr; 
+                } 
+            }).catch(e => { console.log("Erreur adresse", e); });
+        }
+
+        // --- LOGIC ---
+        function formatMinutes(mins) { let h = Math.floor(mins / 60); let m = Math.round(mins % 60); return `${h}h${m.toString().padStart(2,'0')}`; }
+        function updateTourNameSuggestions() { 
+            const dataList = document.getElementById('tourNameSuggestions'); 
+            dataList.innerHTML = ''; 
+            const defaults = ["Tournée Restaurants", "Tournée Cantines", "Tournée Magasins", "Tournée Particuliers", "Tournée Écoles", "Tournée AMAP"]; 
+            const existing = (savedTours || []).map(t => t.name); 
+            const all = [...new Set([...defaults, ...existing])]; 
+            all.forEach(name => { let opt = document.createElement('option'); opt.value = name; dataList.appendChild(opt); }); 
+        }
+
+        function generateDefaultName(day) { 
+            const prefix = `TOURNEE - ${day} - `; 
+            let max = 0; 
+            if(savedTours && savedTours.length > 0) {
+                savedTours.forEach(t => { 
+                    if(t.name && t.name.startsWith(prefix)) { 
+                        let rest = t.name.substring(prefix.length); 
+                        let num = parseInt(rest); 
+                        if(!isNaN(num) && num > max) max = num; 
+                    } 
+                });
+            }
+            return prefix + (max + 1); 
+        }
+
+        function autoNameTour() { 
+            try {
+                if(!currentTourId || document.getElementById('tName').value === "") { 
+                    const day = document.getElementById('tDay').value; 
+                    const newName = generateDefaultName(day); 
+                    document.getElementById('tName').value = newName; 
+                    updateStatsTitle(); 
+                } 
+            } catch(e) {
+                console.error("Erreur autoNameTour", e);
+            }
+        }
+
+        function saveDepot() {
+            pData.name = document.getElementById('pName').value; pData.addr = document.getElementById('pAddr').value;
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
+            let selectedJobs = []; checkboxes.forEach(cb => { if(cb.checked) selectedJobs.push(cb.value); });
+
+            const depotSettings = { 
+                pData: pData, 
+                job: selectedJobs, 
+                mail: document.getElementById('pMail').value,
+                infra: {
+                    sec: document.getElementById('surfSec').value,
+                    frais: document.getElementById('surfFrais').value,
+                    neg: document.getElementById('surfNeg').value,
+                    prep: document.getElementById('surfPrep').value
+                },
+                veh: { 
+                    type: document.getElementById('vType').value, 
+                    fuel: document.getElementById('fType').value, 
+                    cons: document.getElementById('vCons').value, 
+                    price: document.getElementById('fPrice').value, 
+                    amort: document.getElementById('vAmort').value, 
+                    frigo: document.getElementById('vFrigo').checked,
+                    driver: document.getElementById('driverType').value, 
+                    cH: document.getElementById('cH').value, 
+                    tPrep: document.getElementById('tPrep').value, 
+                    tLoad: document.getElementById('tLoad').value 
+                } 
+            };
+            try {
+                localStorage.setItem('pnr_logistique_v83_clean', JSON.stringify(depotSettings)); 
+            } catch(e) { console.error("Save depot error", e); }
+        }
+
+        function loadGlobalDepot() {
+            let s = localStorage.getItem('pnr_logistique_v83_clean');
+            if(s) { const d = JSON.parse(s); pData = d.pData || { lat:null, lon:null, addr:"" }; document.getElementById('pName').value = pData.name || ""; document.getElementById('pAddr').value = pData.addr || ""; 
+            if(d.job && Array.isArray(d.job)) {
+                const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
+                checkboxes.forEach(cb => { if(d.job.includes(cb.value)) cb.checked = true; });
+                updateJobSelection();
+            }
+            if(d.mail) document.getElementById('pMail').value = d.mail;
+            if(d.infra) {
+                document.getElementById('surfSec').value = d.infra.sec || 0; updateSurfaceDisplay('sec', d.infra.sec || 0);
+                document.getElementById('surfFrais').value = d.infra.frais || 0; updateSurfaceDisplay('frais', d.infra.frais || 0);
+                document.getElementById('surfNeg').value = d.infra.neg || 0; updateSurfaceDisplay('neg', d.infra.neg || 0);
+                document.getElementById('surfPrep').value = d.infra.prep || 0; updateSurfaceDisplay('prep', d.infra.prep || 0);
+            }
+            if(d.veh) { 
+                document.getElementById('vType').value = d.veh.type; 
+                document.getElementById('fType').value = d.veh.fuel; 
+                document.getElementById('vCons').value = d.veh.cons; 
+                document.getElementById('fPrice').value = d.veh.price; 
+                document.getElementById('vAmort').value = d.veh.amort || 0.25;
+                document.getElementById('vFrigo').checked = d.veh.frigo || false;
+                document.getElementById('driverType').value = d.veh.driver; 
+                document.getElementById('cH').value = d.veh.cH; 
+                document.getElementById('tPrep').value = d.veh.tPrep; 
+                document.getElementById('tLoad').value = d.veh.tLoad; 
+            } }
+        }
+        function loadToursLibrary() { let s = localStorage.getItem('logistique_tours_v83_clean'); savedTours = s ? JSON.parse(s) : []; updateTourNameSuggestions(); renderToursList(); }
+
+        function renderToursList() {
+            const container = document.getElementById('tours-list-container');
+            const totalBox = document.getElementById('global-totals-container');
+            const stickyBar = document.getElementById('sticky-send-bar'); // NEW STICKY BAR
+
+            if(savedTours.length === 0) { 
+                container.innerHTML = '<div style="padding:20px; color:#999; font-style:italic; text-align:center;">Aucune tournée enregistrée pour l\'instant. Utilisez le formulaire ci-dessus.</div>'; 
+                totalBox.style.display = "none"; 
+                if(stickyBar) stickyBar.style.display = "none"; // Hide sticky bar if empty
+                return; 
+            }
+            
+            // Show sticky bar if we have tours
+            if(stickyBar) stickyBar.style.display = "flex";
+
+            container.innerHTML = '';
+            let gCA = 0, gCost = 0, gDist = 0, gTime = 0;
+            savedTours.forEach(t => {
+                const div = document.createElement('div'); div.className = 'tour-row ' + (t.id === currentTourId ? 'active' : '');
+                let ca = t.stats ? t.stats.ca : 0; let cost = t.stats ? t.stats.cost : 0; let ratio = t.stats ? t.stats.ratio : 0; let dist = t.stats && t.stats.dist ? t.stats.dist.toFixed(1) : "0"; let time = t.stats && t.stats.time ? t.stats.time : 0; let stopCount = t.stops ? t.stops.length : 0; let preview = t.stops ? t.stops.map(s => s.client).slice(0, 6).join(', ') + (t.stops.length > 6 ? "..." : "") : "";
+                gCA += ca; gCost += cost; gDist += parseFloat(dist); gTime += time;
+                div.innerHTML = `<div onclick="loadTour('${t.id}')"><div class="t-id"><strong>${t.name}</strong></div><div class="t-day">${t.day}</div></div><div class="t-metrics" onclick="loadTour('${t.id}')"><span style="color:var(--success);">💰 ${Math.round(ca)}€</span><span style="color:var(--danger);">📉 ${Math.round(cost)}€</span><span style="color:var(--lib);">⚖️ ${ratio}%</span><span>🛣️ ${dist} km</span><span>⏱️ ${formatMinutes(time)}</span><span>🛑 ${stopCount} arrêts</span></div><div class="t-preview" onclick="loadTour('${t.id}')">${preview}</div><div class="t-actions"><button class="btn-mini" style="background:var(--lib); padding:4px 8px;" onclick="loadTour('${t.id}')">✏️</button><button class="btn-mini" style="background:var(--danger); padding:4px 8px;" onclick="deleteTour('${t.id}')">✕</button></div>`; container.appendChild(div);
+            });
+            totalBox.style.display = "flex";
+            document.getElementById('gt-ca').innerText = Math.round(gCA) + " €"; 
+            document.getElementById('gt-cost').innerText = Math.round(gCost) + " €"; 
+            document.getElementById('gt-dist').innerText = Math.round(gDist) + " km"; 
+            document.getElementById('gt-time').innerText = formatMinutes(gTime);
+            
+            let gRatio = gCA > 0 ? (gCost / gCA * 100).toFixed(1) : 0; 
+            let gtElem = document.getElementById('gt-ratio');
+            gtElem.innerText = gRatio + " %";
+            
+            if(gRatio < 10) gtElem.style.color = "#27ae60";
+            else if(gRatio < 30) gtElem.style.color = "#e67e22";
+            else gtElem.style.color = "#e74c3c";
+        }
+
+        function resetAll() {
+            if(!confirm("⚠️ ATTENTION : Vous allez effacer TOUTES les données (Paramètres du dépôt et Historique des tournées).\n\nVoulez-vous vraiment tout remettre à zéro ?")) return;
+            
+            // 1. Nettoyage LocalStorage
+            localStorage.removeItem('pnr_logistique_v83_clean');
+            localStorage.removeItem('logistique_tours_v83_clean');
+            
+            // 2. Reset Variables Globales
+            stops = [];
+            savedTours = [];
+            currentTourId = null;
+            pData = { lat:null, lon:null, addr:"" };
+            sTemp = { lat:null, lon:null };
+            currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0 };
+
+            // 3. Reset UI Dépôt (Champs texte)
+            document.getElementById('pName').value = "";
+            document.getElementById('pAddr').value = "";
+            document.getElementById('pMail').value = "";
+            
+            // Reset Métiers
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateJobSelection();
+
+            // Reset Infra Sliders
+            ['Sec', 'Frais', 'Neg', 'Prep'].forEach(type => {
+                const el = document.getElementById('surf' + type);
+                if(el) {
+                    el.value = 0;
+                    updateSurfaceDisplay(type.toLowerCase(), 0);
+                }
+            });
+
+            // Reset Véhicule & Coûts (Valeurs par défaut)
+            document.getElementById('vType').selectedIndex = 1; // Fourgon compact
+            document.getElementById('vFrigo').checked = false;
+            document.getElementById('fType').selectedIndex = 0; // Diesel
+            document.getElementById('vCons').value = "8.5";
+            document.getElementById('fPrice').value = "1.75";
+            document.getElementById('vAmort').value = "0.25";
+            
+            document.getElementById('driverType').selectedIndex = 0; // Producteur
+            document.getElementById('cH').value = "18";
+            document.getElementById('tPrep').value = "30";
+            document.getElementById('tLoad').value = "20";
+
+            // 4. Déverrouillage et validation
+            unlockDepot(); // Repasse en mode "prod"
+            checkProducerValidation(); // Met à jour l'état du bouton valider (sera disabled)
+            
+            // 5. Reset UI Tournée
+            // On appelle newTour(true) pour nettoyer la carte et les champs arrêts
+            newTour(true); 
+            
+            // 6. Reset Liste des tournées
+            renderToursList();
+            
+            // 7. Feedback
+            showToast("♻️ Réinitialisation complète effectuée !");
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- BACKUP ---
+        function downloadBackup() { const data = { depot: localStorage.getItem('pnr_logistique_v83_clean'), tours: localStorage.getItem('logistique_tours_v83_clean') }; const blob = new Blob([JSON.stringify(data)], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "backup_logistique_" + new Date().toISOString().slice(0,10) + ".json"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+        function uploadBackup(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if(data.depot) localStorage.setItem('pnr_logistique_v83_clean', data.depot); if(data.tours) localStorage.setItem('logistique_tours_v83_clean', data.tours); alert("✅ Sauvegarde restaurée avec succès !"); location.reload(); } catch(err) { alert("❌ Erreur : Fichier invalide."); } }; reader.readAsText(file); }
+
+        function saveCurrentTour() {
+            // VERIF NOM TOURNEE (CRITIQUE V113)
+            const tName = document.getElementById('tName').value; 
+            if(!tName.trim()) {
+                 alert("⚠️ Attention : Veuillez donner un Nom à cette tournée (ex: 'Tournée écoles') avant de sauvegarder.");
+                 document.getElementById('tName').focus();
+                 return;
+            }
+            
+            try {
+                const tourData = { id: currentTourId || Date.now().toString(), name: tName, day: document.getElementById('tDay').value, stops: stops, stats: { ...currentStats } };
+                const idx = savedTours.findIndex(t => t.id === tourData.id); if(idx >= 0) savedTours[idx] = tourData; else savedTours.push(tourData);
+                currentTourId = tourData.id; 
+                localStorage.setItem('logistique_tours_v83_clean', JSON.stringify(savedTours)); 
+                
+                // NO updateView() here to prevent flicker/reset
+                updateTourNameSuggestions(); 
+                renderToursList();
+                
+                // FEEDBACK BOUTON
+                const btn = document.getElementById('btn-save-local');
+                const originalText = btn.innerText;
+                btn.innerText = "✅ SAUVEGARDÉ !";
+                btn.style.background = "#219150";
+                
+                // SHOW DECISION MODAL INSTEAD OF ALERT
+                document.getElementById('save-action-modal').style.display = 'flex';
+                
+                setTimeout(() => { 
+                    btn.innerText = originalText; 
+                    btn.style.background = "var(--success)";
+                    let rows = document.querySelectorAll('.tour-row'); if(rows.length > 0) { rows.forEach(r => { if(r.classList.contains('active')) r.classList.add('newly-saved'); }); } 
+                }, 2000);
+            } catch(e) {
+                alert("Erreur lors de la sauvegarde : " + e.message);
+            }
+        }
+
+        function closeSaveActionModal() {
+            document.getElementById('save-action-modal').style.display = 'none';
+        }
+
+        function triggerNewTourFromModal() {
+            closeSaveActionModal();
+            newTour(true); // skip confirmation
+        }
+
+        // NEW FUNCTION TO LINK MODAL TO SEND ACTION
+        function triggerSendFromModal() {
+            closeSaveActionModal();
+            openRgpdModal();
+        }
+
+        function loadTour(id) { const tour = savedTours.find(t => t.id === id); if(tour) { currentTourId = tour.id; document.getElementById('tName').value = tour.name; document.getElementById('tDay').value = tour.day; stops = tour.stops || []; updateView(); updateStatsTitle(); renderToursList(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+        
+        function newTour(skipConfirm) { 
+            // 1. CONFIRMATION (Conditional)
+            if(!skipConfirm && stops.length > 0 && !confirm("Voulez-vous vider la carte pour créer une nouvelle tournée ?")) return; 
+            
+            // 2. RESET STATE
+            currentTourId = null; 
+            document.getElementById('tDay').value = "Lundi"; 
+            stops = []; 
+            sTemp = { lat: null, lon: null }; 
+            
+            // 3. RESET INPUTS (CLEANUP V127)
+            document.getElementById('sClient').value = "";
+            document.getElementById('sAddr').value = "";
+            document.getElementById('sEuro').value = "0";
+            document.getElementById('sTime').value = "15";
+            document.getElementById('sOpType').value = "📦";
+
+            // 4. RESET STATS
+            currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0 }; 
+            
+            // 5. UPDATE UI
+            // Reset tName explicitly to force auto-name generation even if it was "TOURNEE - Lundi - 1"
+            document.getElementById('tName').value = ""; 
+            autoNameTour(); 
+            updateView(); 
+            updateStatsTitle(); 
+            renderToursList(); 
+            
+            // 6. FEEDBACK
+            showToast("✨ Nouvelle tournée créée !");
+        }
+
+        function deleteTour(id) { if(!confirm("Supprimer cette tournée ?")) return; savedTours = savedTours.filter(t => t.id !== id); localStorage.setItem('logistique_tours_v83_clean', JSON.stringify(savedTours)); if(currentTourId === id) newTour(); else renderToursList(); }
+        
+        function checkProducerValidation() { 
+            const pNameInput = document.getElementById('pName'); 
+            const btnValide = document.getElementById('btn-validate-depot');
+            let nameOk = pNameInput.value.trim().length > 0;
+            if(nameOk) pNameInput.classList.remove('input-error');
+            else pNameInput.classList.add('input-error');
+
+            let addrOk = pData.lat !== null;
+
+            if(nameOk && addrOk) { 
+                btnValide.classList.add('active'); 
+                btnValide.disabled = false; 
+            } else { 
+                btnValide.classList.remove('active'); 
+                btnValide.disabled = true; 
+            } 
+            saveDepot(); 
+        }
+        
+        function lockDepot() { 
+            const pNameInput = document.getElementById('pName');
+            if(pNameInput.value.trim().length === 0) { alert("Veuillez renseigner le Nom de la ferme."); pNameInput.focus(); return; }
+            document.getElementById('header-form').style.display = 'none'; 
+            document.getElementById('header-summary').style.display = 'flex'; 
+            const name = document.getElementById('pName').value; let rawAddr = document.getElementById('pAddr').value; let addrParts = rawAddr.split(',').map(s => s.trim()); let shortAddr = addrParts.slice(0, 3).join(', '); const tPrep = parseFloat(document.getElementById('tPrep').value) || 0; const tLoad = parseFloat(document.getElementById('tLoad').value) || 0; const totalTime = tPrep + tLoad; const veh = document.getElementById('vType').value; 
+            document.getElementById('summary-content').innerHTML = `<span>✅ <strong>${name}</strong></span><span class="sep">|</span><span>📍 ${shortAddr}</span><span class="sep">|</span><span>⏱️ ${totalTime} min</span><span class="sep">|</span><span>🚚 ${veh}</span>`; 
+            
+            // UNBLOCK AREA
+            const lockedSection = document.getElementById('locked-section');
+            lockedSection.classList.remove('blocked-area'); 
+            
+            setMode('stop'); 
+            setTimeout(function(){ map.invalidateSize(); }, 200); 
+            // FORCE RE-RENDER DEPOT ICON
+            updateView();
+        }
+
+        function unlockDepot() { 
+            document.getElementById('header-form').style.display = 'block'; 
+            document.getElementById('header-summary').style.display = 'none'; 
+            
+            const lockedSection = document.getElementById('locked-section');
+            lockedSection.classList.add('blocked-area'); 
+            
+            setMode('prod'); 
+        }
+
+        function setMode(m) { mode = m; document.getElementById('btn-t-prod').style.background = m==='prod' ? 'var(--accent)' : '#95a5a6'; document.getElementById('btn-t-stop').style.background = m==='stop' ? 'var(--accent)' : '#95a5a6'; }
+        function showTempMarker(lat, lon) { }
+        
+        // ADD STOP SECURISE (V113)
+        function addStop() { 
+            if(!sTemp.lat) return alert("Position manquante. Cliquez sur la carte ou utilisez l'adresse."); 
+            let cName = document.getElementById('sClient').value.trim(); 
+            if(!cName) cName = "Arrêt " + (stops.length + 1); 
+            
+            stops.push({ 
+                client:cName, 
+                icon:document.getElementById('sOpType').value, 
+                euro:parseFloat(document.getElementById('sEuro').value)||0, 
+                vol:0, // FORCE 0 (Suppression V107)
+                time:parseFloat(document.getElementById('sTime').value)||15, 
+                lat:sTemp.lat, 
+                lon:sTemp.lon, 
+                addr:document.getElementById('sAddr').value, 
+                id:Date.now() 
+            }); 
+            
+            sTemp={lat:null, lon:null}; 
+            document.getElementById('sAddr').value=""; 
+            document.getElementById('sClient').value=""; 
+            
+            updateView(); 
+        }
+
+        function editStop(index) { 
+            let s = stops[index]; 
+            document.getElementById('sClient').value = s.client; 
+            document.getElementById('sOpType').value = s.icon; 
+            document.getElementById('sAddr').value = s.addr; 
+            document.getElementById('sEuro').value = s.euro; 
+            document.getElementById('sTime').value = s.time; 
+            sTemp = { lat: s.lat, lon: s.lon }; 
+            stops.splice(index, 1); 
+            updateView(); 
+            document.getElementById('sClient').focus(); 
+        }
+
+        // UPDATE VIEW & ROUTE (V116 FIX)
+        function reorderStops() {
+            let ns=[]; 
+            document.querySelectorAll('.stop-item').forEach(it=>{ 
+                const id = it.getAttribute('data-id'); 
+                if(id) { 
+                    const found = stops.find(s=>s.id===parseInt(id)); 
+                    if(found) ns.push(found); 
+                } 
+            }); 
+            stops=ns; 
+            updateView(); 
+        }
+
+        function updateView() {
+            markers.clearLayers(); routeLayer.clearLayers(); document.getElementById('stops-list').innerHTML="";
+            
+            if(pData.lat) {
+                L.marker([pData.lat, pData.lon], {
+                    icon: L.divIcon({html:'🏠', className:'map-num-icon', iconSize:[30,30], iconAnchor:[15,15]})
+                }).addTo(markers);
+            }
+            
+            stops.forEach((s, i) => { 
+                let rawAddr = s.addr.split(',').map(p => p.trim()); let shortAddr = rawAddr.slice(0, 3).join(', '); let zipMatch = s.addr.match(/\b\d{5}\b/); if(zipMatch) shortAddr += " (" + zipMatch[0] + ")";
+                document.getElementById('stops-list').innerHTML += `<li class="stop-item" data-id="${s.id}"><div class="stop-content"><span class="handle">☰</span>${s.icon} <div class="stop-info"><span class="stop-name">${i+1}. ${s.client}</span><span class="stop-addr">${shortAddr}</span></div></div><div class="stop-meta"><span class="stop-euro">${s.euro} €</span><span class="stop-dist-tag" id="dist-stop-${i}">... km</span><div class="ratio-tag" id="ratio-stop-${i}">...</div></div><div class="stop-actions"><button class="btn-icon" onclick="editStop(${i})" title="Modifier">✏️</button><button class="btn-icon" onclick="stops.splice(${i},1);updateView()" title="Supprimer" style="color:#e74c3c;">✕</button></div></li>`;
+                
+                const numIcon = L.divIcon({ className: 'map-num-icon', html: i + 1, iconSize: [24, 24], iconAnchor: [12, 12] });
+                L.marker([s.lat, s.lon], {icon: numIcon}).addTo(markers);
+            });
+
+            // RE-INIT SORTABLE (V116 FIX)
+            // Note: Sortable is already initialized on load, just need to ensure the list is refreshed for it
+            // No need to destroy/recreate constantly if ID is stable, but for safety:
+             const listEl = document.getElementById('stops-list');
+            /*
+            if(listEl && sortableInstance) {
+               // sortableInstance state remains valid as long as DOM element exists
+            }
+            */
+
+            if(pData.lat && stops.length > 0) {
+                let rRaw = pData.addr.split(',').map(p => p.trim()); let rShort = rRaw.slice(0, 3).join(', '); let rZip = pData.addr.match(/\b\d{5}\b/); if(rZip) rShort += " (" + rZip[0] + ")";
+                document.getElementById('stops-list').innerHTML += `<li class="stop-item return-item"><div class="stop-content"><span style="font-size:1.2rem; margin-right:10px;">🏁</span><div class="stop-info"><span class="stop-name">Retour au point de départ</span><span class="stop-addr">${rShort}</span></div></div><div class="stop-meta"><span class="stop-euro" style="color:#7f8c8d;" id="return-cost">0 €</span><span class="stop-dist-tag" id="dist-return">... km</span></div><div class="stop-actions" style="width:60px;"></div></li>`;
+                calcRoute();
+            } else updateStats(0,0); updateStatsTitle();
+        }
+        
+        function updateStatsTitle() { const tourName = document.getElementById('tName').value.trim(); const titleElem = document.getElementById('kpi-tour-title'); if(tourName) titleElem.innerText = "RÉCAPITULATIF GLOBAL : " + tourName.toUpperCase(); else titleElem.innerText = "RÉCAPITULATIF GLOBAL"; }
+
+        // ROUTE CALCULATION (V113 FIX LOOP)
+        function calcRoute() {
+            // FIX V128: Utilisation de OSRM DE (Allemagne) pour une meilleure performance en Europe et éviter le fallback "vol d'oiseau"
+            // Troncature des coordonnées pour éviter les URLs trop longues et les erreurs de parsing
+            const fmt = (n) => parseFloat(n).toFixed(6);
+
+            let pts = [
+                [fmt(pData.lon), fmt(pData.lat)], 
+                ...stops.map(s => [fmt(s.lon), fmt(s.lat)]), 
+                [fmt(pData.lon), fmt(pData.lat)]
+            ];
+            
+            const fallbackRoute = () => {
+                console.log("Mode Vol d'oiseau activé");
+                let totalDist = 0;
+                let polylinePts = [];
+                const cH = parseFloat(document.getElementById('cH').value) || 0; 
+                const conso = parseFloat(document.getElementById('vCons').value) || 0; 
+                const fuelPrice = parseFloat(document.getElementById('fPrice').value) || 0;
+                const prixAmort = parseFloat(document.getElementById('vAmort').value) || 0;
+
+                // On reconstruit pts pour le calcul local car pts est maintenant un tableau de strings
+                let localPts = [[pData.lon, pData.lat], ...stops.map(s=>[s.lon, s.lat]), [pData.lon, pData.lat]];
+
+                for(let i=0; i<localPts.length-1; i++) {
+                    const from = L.latLng(localPts[i][1], localPts[i][0]);
+                    const to = L.latLng(localPts[i+1][1], localPts[i+1][0]);
+                    const legDist = (from.distanceTo(to) / 1000) * 1.2; // Majoration 20%
+                    totalDist += legDist;
+                    polylinePts.push([localPts[i][1], localPts[i][0]]);
+
+                    // UPDATE STOP UI (FALLBACK LOOP)
+                    if(i < stops.length) {
+                        let s = stops[i];
+                        let legDur = (legDist / 50) * 60; // Est. 50km/h
+                        updateStopUI(i, s, legDist, legDur, cH, conso, fuelPrice, prixAmort);
+                    }
+                }
+                polylinePts.push([localPts[localPts.length-1][1], localPts[localPts.length-1][0]]);
+                
+                L.polyline(polylinePts, {color:'var(--info)', weight:5, dashArray: '10, 10'}).addTo(routeLayer);
+                map.fitBounds(L.featureGroup(markers.getLayers()).getBounds().pad(0.2));
+                
+                updateStats(totalDist, (totalDist / 50) * 60); 
+            };
+
+            // URL OSRM DE (Allemagne) - Plus rapide pour l'Europe
+            fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${pts.map(p=>p.join(',')).join(';')}?overview=full&geometries=geojson`)
+            .then(r => r.json())
+            .then(res => {
+                if(res.code === 'Ok'){
+                    let rd = res.routes[0]; 
+                    lastRouteData = rd; 
+                    L.polyline(rd.geometry.coordinates.map(c=>[c[1], c[0]]), {color:'var(--info)', weight:5}).addTo(routeLayer); 
+                    map.fitBounds(L.featureGroup(markers.getLayers()).getBounds().pad(0.2)); 
+                    updateStats(rd.distance/1000, rd.duration/60);
+
+                    // UPDATE STOP UI (REAL ROUTE LOOP)
+                    const cH = parseFloat(document.getElementById('cH').value) || 0; 
+                    const conso = parseFloat(document.getElementById('vCons').value) || 0; 
+                    const fuelPrice = parseFloat(document.getElementById('fPrice').value) || 0;
+                    const prixAmort = parseFloat(document.getElementById('vAmort').value) || 0;
+
+                    if(rd.legs && rd.legs.length > 0) { 
+                        stops.forEach((s, i) => { 
+                            let legDist = rd.legs[i].distance / 1000; 
+                            let legDur = rd.legs[i].duration / 60; 
+                            updateStopUI(i, s, legDist, legDur, cH, conso, fuelPrice, prixAmort);
+                        }); 
+                        // Return leg
+                        let returnLegIndex = stops.length; 
+                        if(rd.legs[returnLegIndex]) { 
+                            let retDist = rd.legs[returnLegIndex].distance / 1000;
+                            let elRetDist = document.getElementById('dist-return'); 
+                            if(elRetDist) elRetDist.innerText = retDist.toFixed(1) + " km";
+                            // Recalcul simple coût retour
+                             const retCost = ((retDist/100)*conso*fuelPrice) + (retDist*prixAmort) + ((rd.legs[returnLegIndex].duration/60/60)*cH);
+                             let elRetCost = document.getElementById('return-cost'); 
+                             if(elRetCost) elRetCost.innerText = "-" + retCost.toFixed(2) + " €";
+                        }
+                    }
+                } else {
+                    fallbackRoute();
+                }
+            })
+            .catch(e => {
+                console.error("Erreur OSRM", e);
+                fallbackRoute();
+            });
+        }
+
+        // SHARED FUNCTION FOR STOP UI UPDATE
+        function updateStopUI(i, s, legDist, legDur, cH, conso, fuelPrice, prixAmort) {
+            const costFuel = (legDist / 100) * conso * fuelPrice; 
+            const costAmort = legDist * prixAmort;
+            const costTime = ((legDur + s.time) / 60) * cH; 
+            const totalLegCost = costFuel + costAmort + costTime; 
+            
+            let ratio = 0; 
+            let ratioText = "N/A"; 
+            let ratioClass = "ratio-bad"; 
+            
+            if(s.euro > 0) { 
+                ratio = (totalLegCost / s.euro) * 100; 
+                ratioText = "Ratio Logistique " + ratio.toFixed(0) + " %"; 
+                if(ratio < 10) ratioClass = "ratio-good"; 
+                else if(ratio < 30) ratioClass = "ratio-mid"; 
+            } else { 
+                ratioText = "Ratio Logistique ∞"; 
+            } 
+            
+            let elDist = document.getElementById(`dist-stop-${i}`); 
+            if(elDist) elDist.innerText = legDist.toFixed(1) + " km"; 
+            
+            let elRatio = document.getElementById(`ratio-stop-${i}`); 
+            if(elRatio) { 
+                elRatio.innerText = ratioText; 
+                elRatio.className = "ratio-tag " + ratioClass; 
+            }
+        }
+
+        function updateStats(dist, driveTime) {
+            const cH = parseFloat(document.getElementById('cH').value) || 0; const conso = parseFloat(document.getElementById('vCons').value) || 0; const prixCarb = parseFloat(document.getElementById('fPrice').value) || 0; 
+            const prixAmort = parseFloat(document.getElementById('vAmort').value) || 0; 
+            const prep = parseFloat(document.getElementById('tPrep').value) || 0; const load = parseFloat(document.getElementById('tLoad').value) || 0;
+            
+            const sTime = stops.reduce((a,b)=>a+b.time, 0) + prep + load + driveTime; 
+            const fuelCost = (dist / 100) * conso * prixCarb; 
+            const amortCost = dist * prixAmort; 
+            const laborCost = (sTime / 60) * cH; 
+            
+            const totalCost = fuelCost + amortCost + laborCost; 
+            const ca = stops.reduce((a,b)=>a+b.euro, 0);
+            currentStats = { cost: totalCost, ca: ca, ratio: ca > 0 ? (totalCost/ca*100).toFixed(1) : 0, dist: dist, time: sTime };
+            
+            document.getElementById('rDist').innerText=dist.toFixed(1)+" km"; 
+            document.getElementById('rTime').innerText=Math.floor(driveTime/60)+"h"+Math.round(driveTime%60).toString().padStart(2,'0'); 
+            document.getElementById('rOps').innerText=Math.floor(sTime/60)+"h"+Math.round(sTime%60).toString().padStart(2,'0'); 
+            
+            document.getElementById('rCostTrans').innerText=(fuelCost + amortCost).toFixed(2)+" €"; 
+            
+            document.getElementById('rCostOps').innerText=laborCost.toFixed(2)+" €"; 
+            document.getElementById('rTotal').innerText=totalCost.toFixed(2)+" €"; 
+            document.getElementById('rVal').innerText=ca.toFixed(2)+" €"; 
+            
+            let ratioElem = document.getElementById('rRatio');
+            ratioElem.innerText=currentStats.ratio+" %";
+            if(currentStats.ratio < 10) ratioElem.style.color = "#27ae60";
+            else if(currentStats.ratio < 30) ratioElem.style.color = "#e67e22";
+            else ratioElem.style.color = "#e74c3c";
+        }
+
+        // --- ENVOI CENTRALISÉ ---
+        async function sendProjectData() {
+            if(savedTours.length === 0) { alert("Aucune tournée enregistrée à envoyer."); return; }
+            const btn = document.getElementById('btn-export-project'); 
+            btn.disabled = true; btn.innerText = "⏳ Envoi en cours...";
+            
+            // Aussi désactiver le bouton sticky s'il existe
+            const stickyBtn = document.querySelector('.btn-sticky-send');
+            if(stickyBtn) { stickyBtn.disabled = true; stickyBtn.innerText = "⏳..."; }
+
+            const fullData = { meta: { date: new Date().toISOString(), version: "V113_CATL_Calculs" }, depot: JSON.parse(localStorage.getItem('pnr_logistique_v83_clean')), tours: savedTours };
+            const nomProd = document.getElementById('pName').value || "Producteur Inconnu";
+            
+            try { 
+                const { data, error } = await supabaseClient.from('tournees_catl').insert([ { nom_producteur: nomProd, data_json: fullData } ]); 
+                if (error) throw error; 
+                
+                // Cacher la barre sticky en cas de succès
+                document.getElementById('sticky-send-bar').style.display = 'none';
+
+                document.getElementById('success-modal').style.display = 'flex';
+                console.log("Envoyé:", data); 
+            } catch (err) { 
+                console.error("Erreur Supabase:", err); 
+                alert("❌ Erreur technique : " + err.message); 
+                
+                if(stickyBtn) { stickyBtn.disabled = false; stickyBtn.innerText = "CLIQUEZ ICI POUR ENVOYER A LA CATL"; }
+
+            } finally { 
+                btn.disabled = false; btn.innerText = "🚀 ENVOYER LE PROJET A LA CATL"; 
+            }
+        }
+
+        function openRgpdModal() {
+            if(savedTours.length === 0) { alert("Aucune tournée enregistrée à envoyer."); return; }
+            document.getElementById('rgpd-modal').style.display = 'flex';
+        }
+        function closeRgpdModal() { document.getElementById('rgpd-modal').style.display = 'none'; }
+        function confirmAndSend() { closeRgpdModal(); sendProjectData(); }
+        function closeSuccessModal() { document.getElementById('success-modal').style.display = 'none'; }
+        function openFormulaire() {
+            window.open("https://docs.google.com/forms/d/e/1FAIpQLSdMt4LcBNYnBd1jvHNXizbh2sUgbN_7ZYpkvKMkRwJysvaQIw/viewform?usp=header", "_blank");
+            closeSuccessModal();
+        }
+
+    </script>
+</body>
+</html>
