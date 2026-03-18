@@ -1,847 +1,927 @@
-Test<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulateur Logistique - CATL (VersionTest)</title>
+    <title>Simulateur Logistique Mutualisée - Démo</title>
     
-    <link rel="icon" href="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/LogoEpurvertpetit.png?raw=true">
+    <!-- Google Fonts: Oswald & Georgia -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- CDN Fiable pour SortableJS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- CDN Fiable pour SortableJS (Drag & Drop) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Tailwind CSS via CDN avec configuration personnalisée -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dix-dark': '#405F59',   /* Vert Foncé Institutionnel */
+                        'dix-light': '#549e39',  /* Vert Clair Boutons */
+                        'dix-bg': '#f9fafb',     /* Fond clair */
+                        'dix-text': '#1f2937',   /* Texte courant */
+                    },
+                    fontFamily: {
+                        'oswald': ['Oswald', 'sans-serif'],
+                        'georgia': ['Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
-        :root { --primary: #2c3e50; --accent: #e67e22; --success: #27ae60; --bg: #f4f7f9; --danger: #e74c3c; --info: #3498db; --lib: #8e44ad; --text: #546e7a; --locked: #bdc3c7; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; background: var(--bg); color: #333; display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 80px; /* Space for sticky bar */ }
+        body { background-color: #f9fafb; color: #1f2937; font-family: 'Georgia', serif; }
+        h1, h2, h3, h4, h5, h6, .titre-oswald { font-family: 'Oswald', sans-serif; text-transform: uppercase; }
+
+        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Autocomplétion */
+        .autocomplete-items { position: absolute; border: 1px solid #d4d4d4; border-bottom: none; border-top: none; z-index: 10000; top: 100%; left: 0; right: 0; background-color: #fff; border-radius: 0 0 0.75rem 0.75rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; }
+        .autocomplete-items div { padding: 10px; cursor: pointer; background-color: #fff; border-bottom: 1px solid #d4d4d4; font-size: 0.85rem; font-family: 'Georgia', serif; }
+        .autocomplete-items div:hover { background-color: #f3f4f6; }
         
-        /* HEADER */
-        .client-header { background: white; padding: 15px 25px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-top: 6px solid var(--success); }
-        .client-identity { display: flex; align-items: center; gap: 25px; }
-        .client-logo { height: 85px; width: auto; display: block; }
+        .handle { cursor: grab; color: #9ca3af; font-size: 1.25rem; margin-right: 10px; }
+        .handle:active { cursor: grabbing; }
+
+        .ratio-tag { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-align: center; font-family: 'Oswald', sans-serif;}
+        .ratio-good { background: #dcfce7; color: #166534; border: 1px solid #166534; }
+        .ratio-mid { background: #fef08a; color: #854d0e; border: 1px solid #854d0e; }
+        .ratio-bad { background: #fee2e2; color: #991b1b; border: 1px solid #991b1b; }
         
-        /* ASSISTANCE */
-        .assistance-box { font-size: 0.85rem; color: var(--text); text-align: right; border-left: 1px solid #ddd; padding-left: 20px; line-height: 1.5; }
-        .assistance-title { font-weight: 800; color: var(--accent); text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 5px; letter-spacing: 0.5px; }
-        .assistance-box a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
-        .assistance-box a:hover { color: var(--accent); text-decoration: underline; }
+        /* Masquer la flèche native de details/summary pour un design plus propre */
+        summary::-webkit-details-marker { display: none; }
+        summary { list-style: none; }
 
-        /* BANDEAUX */
-        .header-band { background: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 6px solid var(--primary); transition: all 0.4s ease; position: relative; z-index: 100; }
-        .header-band.validated { border-top-color: var(--success); background-color: #f6fffa; box-shadow: 0 4px 20px rgba(39, 174, 96, 0.15); }
-        .header-row { display: flex; gap: 15px; margin-bottom: 15px; align-items: flex-end; flex-wrap: wrap; }
-        .card { background: white; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid #eef2f7; }
-        
-        .section-title { font-size: 0.8rem; color: var(--primary); font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; width: 100%; display: block; margin-bottom: 5px; }
-
-        /* FORM */
-        .form-group { flex: 1; display: flex; flex-direction: column; gap: 5px; min-width: 100px; position: relative; }
-        .form-group label { font-weight: 600; color: var(--text); font-size: 0.75rem; }
-        input[type="text"], input[type="number"], input[type="email"], select { padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 0.9rem; width: 100%; box-sizing: border-box; transition: border 0.3s; }
-        .input-valid { border-color: var(--success) !important; background-color: #fff !important; }
-        .input-error { border-color: var(--danger) !important; background-color: #fff5f5 !important; }
-
-        /* MULTI-SELECT */
-        .multiselect-input { padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; background: white; cursor: pointer; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #777; }
-        .multiselect-input.has-value { color: #333; }
-        .multiselect-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #dcdfe6; border-radius: 4px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
-        .multiselect-dropdown label { display: block; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f9f9f9; font-weight: normal; color: #333; }
-        .multiselect-dropdown label:hover { background-color: #f1f1f1; }
-        .multiselect-dropdown input { width: auto; margin-right: 8px; }
-
-        /* INFRA */
-        .infra-block { display: flex; justify-content: space-between; gap: 15px; width: 100%; flex-wrap: wrap; }
-        .infra-item { flex: 1; min-width: 140px; background: #fff; padding: 8px; border-radius: 4px; border:1px solid #f0f0f0; }
-        .infra-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .infra-label { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--text); }
-        .infra-label svg { stroke: var(--primary); }
-        .infra-val { font-weight: bold; color: var(--info); font-size: 0.9rem; }
-        input[type=range] { width: 100%; cursor: pointer; accent-color: var(--info); }
-        
-        /* AUTOCOMPLETE */
-        .autocomplete-items { position: absolute; border: 1px solid #d4d4d4; border-bottom: none; border-top: none; z-index: 10000; top: 100%; left: 0; right: 0; background-color: #fff; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        .autocomplete-items div { padding: 10px; cursor: pointer; background-color: #fff; border-bottom: 1px solid #d4d4d4; font-size: 0.85rem; }
-        .autocomplete-items div:hover { background-color: #e9e9e9; }
-
-        /* BOUTONS & STYLE NOUVELLE TOURNEE */
-        .btn-mini { border: none; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: opacity 0.2s; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-mini:hover { opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-
-        .btn-new-tour {
-            background: white;
-            color: var(--accent);
-            border: 2px solid var(--accent);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn-new-tour:hover {
-            background: var(--accent);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(230, 126, 34, 0.2);
-        }
-
-        #btn-validate-depot { background: var(--success); color: white; margin-top: 25px; width: auto; min-width: 200px; display: block; margin-left: auto; margin-right: auto; border: none; border-radius: 20px; padding: 12px 40px; font-weight: bold; font-size: 1rem; opacity: 0.5; cursor: not-allowed; transition: all 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #btn-validate-depot.active { opacity: 1; cursor: pointer; transform: translateY(-1px); }
-        
-        #header-summary { display: none; align-items: center; justify-content: space-between; }
-        .summary-text { font-size: 0.9rem; color: var(--primary); display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
-        .summary-text span { display: flex; align-items: center; gap: 5px; }
-        
-        /* LAYOUT & MAP */
-        .main-container { display: flex; gap: 25px; flex: 1; margin-bottom: 30px;}
-        .left-panel { flex: 1; min-width: 420px; transition: opacity 0.3s; position: relative; }
-        .right-panel { flex: 2; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
-        
-        /* ZONES BLOQUEES (Fix UX) */
-        .blocked-area { 
-            opacity: 0.5; 
-            filter: grayscale(100%); 
-            position: relative; /* Pour positionner l'overlay */
-        }
-        
-        /* Overlay invisible pour intercepter les clics sur la zone bloquée */
-        .block-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 999;
-            cursor: not-allowed;
-            display: none;
-        }
-        .blocked-area .block-overlay {
-            display: block;
-        }
-
-        #map { height: 450px; width: 100%; border-radius: 6px; border: 1px solid #dcdfe6; background-color: #e5e9ec; display: block; z-index: 1; }
-        .map-num-icon { background: var(--info); color: white; border-radius: 50%; text-align: center; line-height: 24px; font-weight: bold; font-size: 14px; border: 2px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.3); }
-
-        /* KPI & LISTS */
-        .kpi-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .kpi-card { background: white; padding: 15px; border-radius: 6px; border: 1px solid #e4e7ed; text-align: center; }
-        .kpi-title { font-size: 0.7rem; font-weight: 700; color: var(--text); text-transform: uppercase; margin-bottom: 5px; }
-        .kpi-value { font-size: 1.2rem; font-weight: 800; color: var(--primary); transition: color 0.3s; }
-        .summary-banner { grid-column: span 3; background: var(--primary); color: white; border-radius: 6px; padding: 15px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .banner-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
-        .banner-metrics { display: flex; justify-content: space-around; width: 100%; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
-        .summary-value { font-size: 1.8rem; font-weight: 800; display: block; }
-        
-        #stops-list { list-style: none; padding: 0; min-height: 50px; }
-        .stop-item { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #ebedf0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .stop-content { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; }
-        .stop-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; flex:1; }
-        .stop-name { font-weight: bold; font-size: 0.95rem; }
-        .stop-addr { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .stop-meta { text-align: right; margin-right: 15px; min-width: 130px; display: flex; flex-direction: column; align-items: flex-end; }
-        .stop-euro { font-weight: bold; color: var(--success); font-size: 0.9rem; }
-        .stop-dist-tag { font-size: 0.75rem; color: #95a5a6; }
-        .ratio-tag { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-top: 2px; white-space: nowrap; }
-        .ratio-good { background: #d5f5e3; color: #27ae60; border: 1px solid #27ae60; }
-        .ratio-mid { background: #fdebd0; color: #e67e22; border: 1px solid #e67e22; }
-        .ratio-bad { background: #fadbd8; color: #e74c3c; border: 1px solid #e74c3c; }
-        .stop-actions { display: flex; gap: 2px; }
-        .btn-icon { border: none; background: none; cursor: pointer; font-size: 1.1rem; padding: 5px; border-radius: 4px; }
-        .btn-icon:hover { background-color: #f0f0f0; }
-        .handle { cursor: grab; color: #b0bec5; font-size: 1.5rem; margin-right: 10px; padding: 5px; }
-        .return-item { background: #f8f9fa; border-left: 4px solid var(--primary); }
-        .return-item .stop-name { color: var(--primary); }
-        #tours-list-container { max-height: 400px; overflow-y: auto; margin-bottom: 5px; border: 1px solid #eee; border-radius: 4px; }
-        .tour-row { padding: 15px; border-bottom: 1px solid #eee; background: #fff; display: grid; grid-template-columns: 2fr 4fr 3fr 100px; align-items: center; cursor: pointer; transition: background 0.2s; }
-        .tour-row:hover { background: #f9f9f9; }
-        .tour-row.active { background: #f4ecf7; border-left: 4px solid var(--lib); }
-        .t-id { font-size: 1rem; font-weight: bold; color: var(--primary); }
-        .t-day { font-size: 0.8rem; color: #7f8c8d; }
-        .t-metrics { display: flex; gap: 15px; font-size: 0.9rem; color: #333; font-weight: 500; }
-        .t-preview { font-size: 0.8rem; color: #95a5a6; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 20px;}
-        .t-actions { display: flex; gap: 10px; justify-content: flex-end; }
-
-        /* STATS GLOBALES (Dossier) - NOUVEAU STYLE */
-        .global-stats-box {
-            display: flex;
-            justify-content: space-around;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border: 1px solid #eef2f7;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .gs-item {
-            text-align: center;
-            flex: 1;
-            min-width: 100px;
-            padding: 5px;
-            border-right: 1px solid #e0e0e0;
-        }
-        .gs-item:last-child {
-            border-right: none;
-        }
-        .gs-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--text);
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            letter-spacing: 0.5px;
-        }
-        .gs-value {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-
-        .btn-main { background: var(--info); color: white; width: 100%; padding: 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top:20px; }
-        #btn-save-local { background: var(--success); color: white; margin-top: 10px; width: 100%; border: none; border-radius: 6px; padding: 15px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #btn-export-project { background: var(--lib); color: white; width: 300px; margin: 0 auto; border: none; border-radius: 4px; padding: 15px; font-weight: bold; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .backup-controls { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
-        .btn-backup { background: #bdc3c7; color: white; font-size: 0.8rem; }
-        .dix-footer { margin-top: 40px; padding: 20px; background: white; border-radius: 6px; display: flex; justify-content: center; align-items: center; gap: 15px; color: #7f8c8d; font-size: 0.9rem; flex-direction: column; }
-        .dix-logo-small { height: 45px; width: auto; vertical-align: middle; }
-
-        /* STICKY BOTTOM BAR FOR SUBMISSION (UX IMPROVEMENT) */
-        .sticky-send-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: white;
-            border-top: 4px solid var(--lib);
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            padding: 15px 20px;
-            z-index: 9000;
-            display: none; /* Hidden by default */
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            animation: slideUp 0.5s ease-out;
-        }
-        @keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
-        .sticky-text { font-weight: bold; color: var(--primary); font-size: 1.1rem; }
-        .btn-sticky-send {
-            background: var(--lib);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 30px;
-            border: none;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
-            animation: pulse 2s infinite;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(142, 68, 173, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(142, 68, 173, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(142, 68, 173, 0); }
-        }
-
-
-        /* MODALS */
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-        .modal-content { background-color: #fefefe; margin: auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: slideDown 0.3s ease-out; }
-        @keyframes slideDown { from {transform: translateY(-50px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
-        .modal-header { font-size: 1.3rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
-        .modal-body { font-size: 0.95rem; color: #333; line-height: 1.6; margin-bottom: 25px; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 15px; }
-        .btn-cancel { background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-confirm { background: var(--lib); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .btn-confirm:hover { background: #7d3c98; }
-        
-        .legend-bar { background: white; border-radius: 6px; border: 1px solid #eee; padding: 8px; margin-top: 10px; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; font-size: 0.75rem; color: var(--text); }
-        .legend-tag-title { background: #f8f9fa; border: 1px solid #ddd; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 5px; color: var(--primary); }
-        .legend-item { display: flex; align-items: center; gap: 5px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-
-        /* TOAST NOTIFICATION */
-        #toast {
-            visibility: hidden;
-            min-width: 250px;
-            margin-left: -125px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 4px;
-            padding: 16px;
-            position: fixed;
-            z-index: 10000;
-            left: 50%;
-            bottom: 30px;
-            font-size: 17px;
-        }
-        #toast.show {
-            visibility: visible;
-            animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        /* Multiselect Tailwind personnalisé */
+        .multiselect-input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 0.75rem; background: white; cursor: pointer; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; }
+        .multiselect-input.has-value { color: #1f2937; font-weight: 600; }
+        .multiselect-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 0.75rem; max-height: 250px; overflow-y: auto; z-index: 50; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 4px; }
+        .multiselect-dropdown label { display: block; padding: 6px 12px; cursor: pointer; color: #374151; font-size: 0.875rem; }
+        .multiselect-dropdown label:hover { background-color: #f3f4f6; }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center p-4 pb-24">
 
-    <div class="client-header">
-        <div class="client-identity">
-            <!-- LOGO  -->
-            <img src="https://www.catl.be/wp-content/uploads/2022/06/CATL_logo_Pano_Vert_Synthese-1.png" alt="Logo " class="client-logo">
+    <!-- ========================================== -->
+    <!-- ÉCRAN DE CONNEXION (SAS DE SÉCURITÉ)       -->
+    <!-- ========================================== -->
+    <div id="login-screen" class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 border border-gray-100 fade-in mt-20">
+        <div class="text-center mb-8">
+            <img src="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/logo-dix-demo.png?raw=true" alt="Logo DIX" class="h-20 w-auto object-contain mx-auto mb-4" onerror="this.src='https://placehold.co/150x60/405F59/FFFFFF?text=DIX&font=Oswald'">
+            <h1 class="text-3xl text-dix-dark font-bold mb-2 tracking-wide font-oswald uppercase">Espace Démo</h1>
+            <p class="text-dix-text text-sm font-georgia">Outil de diagnostic et de mutualisation logistique.</p>
+        </div>
+
+        <div class="space-y-6">
             <div>
-                <!-- TITRE  -->
-                <h1 style="margin:0; font-size:1.6rem; color:var(--success);"> (Ceinture Aliment-Terre Liegeoise)</h1>
-                <span style="color:var(--text); font-size:1rem;">Simulateur de Logistique en Circuit Court</span>
-            </div>
-        </div>
-        
-        <!-- CONTACT BOX -->
-        <div class="assistance-box">
-            <span class="assistance-title">ASSISTANCE TECHNIQUE</span>
-            <b>Pierre-Alain Mory</b><br>
-            <a href="mailto:pierre.alain.mory@dix-autrement.fr">pierre.alain.mory@dix-autrement.fr</a><br>
-            <span>📞 07 83 00 09 56</span><br>
-            <a href="http://www.dix-autrement.fr" target="_blank">www.dix-autrement.fr</a>
-        </div>
-    </div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0; font-size:1.2rem; color:#7f8c8d;">Configuration de la Tournée</h2>
-        <button onclick="resetAll()" class="btn-mini" style="background:var(--danger);">Réinitialiser Tout</button>
-    </div>
-
-    <div class="header-band" id="prod-band">
-        <div id="header-form">
-            <!-- LIGNE 1 : NOM + METIER -->
-            <div class="header-row">
-                <div class="form-group" style="flex: 1.5;">
-                    <label>Nom de la ferme ou du point de départ *</label>
-                    <input type="text" id="pName" placeholder="Ex: Ferme du Soleil" oninput="checkProducerValidation()">
-                </div>
-                <div class="form-group" style="flex: 1.5; position: relative;">
-                    <label>🌾 Métiers (Plusieurs possibles)</label>
-                    <div id="pJobDisplay" class="multiselect-input" onclick="toggleJobMenu()">-- Choisir --</div>
-                    <div id="pJobMenu" class="multiselect-dropdown">
-                        <label><input type="checkbox" value="Maraîchage" onchange="updateJobSelection()"> Maraîchage</label>
-                        <label><input type="checkbox" value="Céréales panifiables" onchange="updateJobSelection()"> Céréales panifiables</label>
-                        <label><input type="checkbox" value="Grandes cultures (céréales)" onchange="updateJobSelection()"> Grandes cultures (céréales)</label>
-                        <label><input type="checkbox" value="Fruiticulture" onchange="updateJobSelection()"> Fruiticulture</label>
-                        <label><input type="checkbox" value="Bovins laitiers" onchange="updateJobSelection()"> Bovins laitiers</label>
-                        <label><input type="checkbox" value="Ovins Laitiers" onchange="updateJobSelection()"> Ovins Laitiers</label>
-                        <label><input type="checkbox" value="Caprins Laitiers" onchange="updateJobSelection()"> Caprins Laitiers</label>
-                        <label><input type="checkbox" value="Viande Bovine" onchange="updateJobSelection()"> Viande Bovine</label>
-                        <label><input type="checkbox" value="Viande Ovine" onchange="updateJobSelection()"> Viande Ovine</label>
-                        <label><input type="checkbox" value="Viande porcine" onchange="updateJobSelection()"> Viande porcine</label>
-                        <label><input type="checkbox" value="Cuniculture" onchange="updateJobSelection()"> Cuniculture</label>
-                        <label><input type="checkbox" value="Aviculture viandes" onchange="updateJobSelection()"> Aviculture viandes</label>
-                        <label><input type="checkbox" value="Aviculture oeufs" onchange="updateJobSelection()"> Aviculture oeufs</label>
-                        <label><input type="checkbox" value="Viande caprine" onchange="updateJobSelection()"> Viande caprine</label>
-                        <label><input type="checkbox" value="Floriculture/Herboristerie" onchange="updateJobSelection()"> Floriculture/Herboristerie</label>
-                        <label><input type="checkbox" value="Apiculture" onchange="updateJobSelection()"> Apiculture</label>
-                        <label><input type="checkbox" value="Aquaculture (poissons)" onchange="updateJobSelection()"> Aquaculture (poissons)</label>
-                        <label><input type="checkbox" value="Myciculture (Champignons)" onchange="updateJobSelection()"> Myciculture (Champignons)</label>
-                        <label><input type="checkbox" value="Héliciculture" onchange="updateJobSelection()"> Héliciculture</label>
-                        <label><input type="checkbox" value="Arboriculture Forestière" onchange="updateJobSelection()"> Arboriculture Forestière</label>
-                        <label><input type="checkbox" value="Autres" onchange="updateJobSelection()"> Autres</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- LIGNE 2 : EMAIL + ADRESSE -->
-            <div class="header-row">
-                <div class="form-group" style="flex: 1;">
-                    <label>📧 Email de contact</label>
-                    <input type="email" id="pMail" placeholder="contact@ferme.com" onchange="saveDepot()">
-                </div>
-                <div class="form-group" style="flex: 2;">
-                    <label>📍 Adresse du Dépôt *</label>
-                    <div style="display:flex; gap:5px;">
-                        <div style="flex:1; position:relative;">
-                            <input type="text" id="pAddr" placeholder="Tapez une adresse (ex: Rue des Guillemins, Liège)" oninput="handleAddressInput(event, 'prod')">
-                            <div id="pAddr-list" class="autocomplete-items"></div>
-                        </div>
-                        <button class="btn-mini" style="background:var(--info);" onclick="searchAddress('prod')">🔍</button>
-                        <button class="btn-mini" id="btn-t-prod" style="background:#95a5a6;" onclick="setMode('prod')">🎯</button>
-                    </div>
-                </div>
+                <label for="email-input" class="block text-sm font-semibold text-dix-dark mb-2 font-oswald tracking-wide">COURRIEL D'ACCÈS</label>
+                <input type="email" id="email-input" placeholder="votre.email@cooperative.fr" 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-dix-light transition-all shadow-sm font-georgia"
+                    onkeypress="if(event.key === 'Enter') verifyAccess()">
             </div>
             
-            <!-- BLOC PARAMETRES TRANSPORT -->
-            <div class="header-row" style="background: #f8f9fa; padding: 10px; border-radius: 4px; border: 1px solid #eee; flex-direction:column; gap:10px;">
-                <label class="section-title">🚚 Paramètres Transport</label>
-                <div style="display:flex; gap:10px; width:100%; flex-wrap:wrap; align-items: flex-end;">
-                    <div class="form-group" style="flex: 2;">
-                        <label>Type de Véhicule</label>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <select id="vType" onchange="saveDepot()" style="flex:1;">
-                                <option>Petit utilitaire (< 3m³)</option>
-                                <option selected>Fourgon compact (3-6m³)</option>
-                                <option>Grand fourgon (6-12m³)</option>
-                                <option>Petit camion (12-20m³)</option>
-                                <option>Camion lourd (> 20m³)</option>
+            <div id="error-message" class="hidden text-red-600 text-sm italic font-georgia text-center"></div>
+
+            <button id="btn-login" onclick="verifyAccess()" class="w-full bg-dix-light hover:bg-green-600 text-white font-oswald text-lg tracking-wider py-3 rounded-xl shadow-md transition-all flex justify-center items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                <span>ACCÉDER À L'OUTIL</span>
+            </button>
+        </div>
+        <div class="mt-6 text-center text-xs text-gray-400 font-georgia">Réservé aux entrepreneur·euses et partenaires.</div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ÉCRAN DE L'APPLICATION (CACHÉ PAR DÉFAUT)  -->
+    <!-- ========================================== -->
+    <div id="app-screen" class="hidden w-full max-w-[1400px] mx-auto fade-in">
+        
+        <!-- HEADER -->
+        <header class="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-dix-light flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-6">
+                <img src="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/logo-dix-demo.png?raw=true" alt="Logo DIX" class="h-16 w-auto object-contain" onerror="this.src='https://placehold.co/150x60/405F59/FFFFFF?text=DIX&font=Oswald'">
+                <div>
+                    <h1 class="text-2xl text-dix-dark font-bold tracking-wide font-oswald">DÉMO : LOGISTIQUE COOPÉRATIVE DE TERRITOIRE</h1>
+                    <p class="text-dix-text font-georgia italic text-sm mt-1">Évaluation des flux et mutualisation des logistiques territoriales.</p>
+                </div>
+            </div>
+            <div class="text-right border-l border-gray-200 pl-6 hidden md:block">
+                <span class="text-sm font-georgia text-gray-500">Connecté·e en tant que :</span><br>
+                <span id="user-display" class="font-bold text-dix-dark font-oswald tracking-wider"></span>
+            </div>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            
+            <!-- PANNEAU GAUCHE : FORMULAIRES (50%) -->
+            <div class="w-full lg:w-1/2 space-y-6">
+                
+                <!-- BLOC 1 : DÉPÔT & FLUX -->
+                <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-dix-dark"></div>
+                    
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                        <h2 class="text-lg text-dix-light font-oswald flex items-center">
+                            <!-- NOUVELLE ICÔNE (Maison / Foyer / Base) -->
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                            1. POINT DE DÉPART ET PARAMÈTRES
+                        </h2>
+                    </div>
+                    
+                    <div id="depot-form" class="space-y-6 font-georgia text-sm">
+                        <!-- Identité -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block font-semibold text-dix-text mb-1">Nom de la structure *</label>
+                                <input type="text" id="pName" placeholder="Ex: Ferme Coopérative" oninput="checkDepotValidity()" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light focus:outline-none">
+                            </div>
+                            <div class="col-span-2 md:col-span-1 relative">
+                                <label class="block font-semibold text-dix-text mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                    Métiers (Plusieurs possibles) *
+                                </label>
+                                <div id="pJobDisplay" class="multiselect-input" onclick="toggleJobMenu()">-- Choisir --</div>
+                                <div id="pJobMenu" class="multiselect-dropdown hidden">
+                                    <label><input type="checkbox" value="Maraîchage" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Maraîchage</label>
+                                    <label><input type="checkbox" value="Céréales panifiables" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Céréales panifiables</label>
+                                    <label><input type="checkbox" value="Grandes cultures (céréales)" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Grandes cultures (céréales)</label>
+                                    <label><input type="checkbox" value="Fruiticulture" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Fruiticulture</label>
+                                    <label><input type="checkbox" value="Bovins laitiers" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Bovins laitiers</label>
+                                    <label><input type="checkbox" value="Ovins Laitiers" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Ovins Laitiers</label>
+                                    <label><input type="checkbox" value="Caprins Laitiers" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Caprins Laitiers</label>
+                                    <label><input type="checkbox" value="Viande Bovine" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Viande Bovine</label>
+                                    <label><input type="checkbox" value="Viande Ovine" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Viande Ovine</label>
+                                    <label><input type="checkbox" value="Viande porcine" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Viande porcine</label>
+                                    <label><input type="checkbox" value="Cuniculture" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Cuniculture</label>
+                                    <label><input type="checkbox" value="Aviculture viandes" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Aviculture viandes</label>
+                                    <label><input type="checkbox" value="Aviculture oeufs" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Aviculture oeufs</label>
+                                    <label><input type="checkbox" value="Viande caprine" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Viande caprine</label>
+                                    <label><input type="checkbox" value="Floriculture/Herboristerie" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Floriculture/Herboristerie</label>
+                                    <label><input type="checkbox" value="Apiculture" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Apiculture</label>
+                                    <label><input type="checkbox" value="Aquaculture (poissons)" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Aquaculture (poissons)</label>
+                                    <label><input type="checkbox" value="Myciculture (Champignons)" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Myciculture (Champignons)</label>
+                                    <label><input type="checkbox" value="Héliciculture" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Héliciculture</label>
+                                    <label><input type="checkbox" value="Arboriculture Forestière" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Arboriculture Forestière</label>
+                                    <label><input type="checkbox" value="Autres" onchange="updateJobSelection()" class="mr-2 accent-dix-light"> Autres</label>
+                                </div>
+                            </div>
+                            <div class="col-span-2 relative">
+                                <label class="block font-semibold text-dix-text mb-1">Adresse (Dépôt) *</label>
+                                <div class="flex gap-2">
+                                    <div class="w-full relative">
+                                        <input type="text" id="pAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'prod')" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
+                                        <div id="pAddr-list" class="autocomplete-items hidden"></div>
+                                    </div>
+                                    <button onclick="searchAddress('prod')" title="Rechercher l'adresse" class="bg-dix-light text-white px-3 rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center shadow-inner">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </button>
+                                    <button id="btn-t-prod" onclick="setMode('prod')" title="Cibler sur la carte" class="bg-dix-light text-white px-3 rounded-xl transition-colors flex items-center justify-center shadow-inner">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12h-3m-12 0H3m9 9v-3m0-12V3"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ACCORDÉONS PARAMÈTRES -->
+                        <div class="space-y-3">
+                            <!-- 2. PARAMÈTRES TRANSPORT -->
+                            <details class="group bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                <summary class="p-4 cursor-pointer font-oswald text-dix-light flex justify-between items-center hover:bg-gray-100 transition-colors">
+                                    <span class="flex items-center gap-2 text-base">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                                        PARAMÈTRES TRANSPORT
+                                    </span>
+                                    <div class="flex items-center gap-4">
+                                        <label class="text-xs font-georgia text-gray-500 flex items-center gap-2" onclick="event.stopPropagation()">
+                                            <input type="checkbox" id="def-trans" checked onchange="toggleDefaults('trans', this.checked)" class="accent-dix-light w-4 h-4">
+                                            Valeurs par défaut
+                                        </label>
+                                        <span class="transition group-open:rotate-180">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </span>
+                                    </div>
+                                </summary>
+                                <div class="p-4 bg-white border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 opacity-50 pointer-events-none transition-opacity duration-300" id="box-trans">
+                                    <div class="col-span-1 sm:col-span-2 flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1">Type de Véhicule</label>
+                                        <div class="flex flex-col sm:flex-row gap-2">
+                                            <select id="vType" onchange="handleParamsChange()" class="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-xs min-w-0">
+                                                <option>Petit utilitaire (< 3m³)</option>
+                                                <option selected>Fourgon compact (3-6m³)</option>
+                                                <option>Grand fourgon (6-12m³)</option>
+                                                <option>Petit camion (12-20m³)</option>
+                                                <option>Camion lourd (> 20m³)</option>
+                                            </select>
+                                            <label class="flex justify-center items-center gap-1 bg-gray-50 sm:bg-white px-3 py-2 border border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-dix-dark whitespace-nowrap">
+                                                <input type="checkbox" id="vFrigo" onchange="handleParamsChange()" class="accent-dix-light w-4 h-4"> ❄️ Frigo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Énergie
+                                        </label>
+                                        <select id="fType" onchange="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
+                                            <option>Diesel</option><option>Essence</option><option>Électrique</option><option>GNV / Gaz</option><option>Hybride</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2.25c-5.385 6.463-8.25 10.518-8.25 14.25a8.25 8.25 0 1016.5 0c0-3.732-2.865-7.787-8.25-14.25z"></path></svg> Conso. (L/kWh au 100)
+                                        </label>
+                                        <input type="number" id="vCons" value="8.5" step="0.1" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg> Prix (€/L ou /kWh)
+                                        </label>
+                                        <input type="number" id="fPrice" value="1.75" step="0.01" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Amort. (€/km)
+                                        </label>
+                                        <input type="number" id="vAmort" value="0.25" step="0.01" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
+                                    </div>
+                                </div>
+                            </details>
+
+                            <!-- 3. ORGANISATION & COÛTS RH -->
+                            <details class="group bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                <summary class="p-4 cursor-pointer font-oswald text-dix-light flex justify-between items-center hover:bg-gray-100 transition-colors">
+                                    <span class="flex items-center gap-2 text-base">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                        ORGANISATION & COÛTS RH
+                                    </span>
+                                    <div class="flex items-center gap-4">
+                                        <label class="text-xs font-georgia text-gray-500 flex items-center gap-2" onclick="event.stopPropagation()">
+                                            <input type="checkbox" id="def-rh" checked onchange="toggleDefaults('rh', this.checked)" class="accent-dix-light w-4 h-4">
+                                            Valeurs par défaut
+                                        </label>
+                                        <span class="transition group-open:rotate-180">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </span>
+                                    </div>
+                                </summary>
+                                <div class="p-4 bg-white border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 opacity-50 pointer-events-none transition-opacity duration-300" id="box-rh">
+                                    <div class="col-span-1 sm:col-span-2 flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1">Qui assure la tournée ?</label>
+                                        <select id="driverType" onchange="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-dix-dark font-bold">
+                                            <option>Entrepreneur·euse Salarié·e (Soi-même)</option><option>Mutualisation : Salarié·e de la CAE</option><option>Prestataire externe</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1">Prépa (min)</label>
+                                        <input type="number" id="tPrep" value="30" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1">Charg. (min)</label>
+                                        <input type="number" id="tLoad" value="20" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <label class="block font-semibold text-dix-light text-xs mb-1">Coût RH (€/h)</label>
+                                        <input type="number" id="cH" value="20" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs border-dix-light bg-green-50">
+                                    </div>
+                                </div>
+                            </details>
+
+                            <!-- 4. SURFACES DE STOCKAGE -->
+                            <details class="group bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                                <summary class="p-4 cursor-pointer font-oswald text-dix-light flex justify-between items-center hover:bg-gray-100 transition-colors">
+                                    <span class="flex items-center gap-2 text-base">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                                        ESPACES DE TRAVAIL & STOCKAGE
+                                    </span>
+                                    <div class="flex items-center gap-4">
+                                        <label class="text-xs font-georgia text-gray-500 flex items-center gap-2" onclick="event.stopPropagation()">
+                                            <input type="checkbox" id="def-stock" checked onchange="toggleDefaults('stock', this.checked)" class="accent-dix-light w-4 h-4">
+                                            Valeurs par défaut (0 m²)
+                                        </label>
+                                        <span class="transition group-open:rotate-180">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                        </span>
+                                    </div>
+                                </summary>
+                                <div class="p-4 bg-white border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 opacity-50 pointer-events-none transition-opacity duration-300" id="box-stock">
+                                    <div class="flex flex-col justify-end h-full">
+                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                            <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"></path></svg> Préparation</span>
+                                            <span id="val-prep" class="text-dix-light">0 m²</span>
+                                        </div>
+                                        <input type="range" id="surfPrep" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-prep').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                            <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Sec (Ambiant)</span>
+                                            <span id="val-sec" class="text-dix-light">0 m²</span>
+                                        </div>
+                                        <input type="range" id="surfSec" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-sec').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                            <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8z"></path></svg> Frais (2-6°C)</span>
+                                            <span id="val-frais" class="text-dix-light">0 m²</span>
+                                        </div>
+                                        <input type="range" id="surfFrais" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-frais').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                    </div>
+                                    <div class="flex flex-col justify-end h-full">
+                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                            <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"></path></svg> Négatif (< 0°C)</span>
+                                            <span id="val-neg" class="text-dix-light">0 m²</span>
+                                        </div>
+                                        <input type="range" id="surfNeg" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-neg').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                        
+                        <button id="btn-validate-depot" onclick="lockDepot()" disabled class="w-full bg-dix-dark text-white font-oswald text-lg py-3 rounded-xl shadow-md transition-all flex justify-center items-center opacity-50 cursor-not-allowed">
+                            VALIDER LE POINT DE DÉPART
+                        </button>
+                    </div>
+
+                    <!-- RECAPITULATIF DEPOT (Caché au début) -->
+                    <div id="depot-summary" class="hidden justify-between items-center bg-dix-bg p-4 rounded-xl border border-gray-200">
+                        <div id="summary-content" class="text-sm font-georgia text-dix-text flex items-center"></div>
+                        <button onclick="unlockDepot()" class="text-dix-light font-oswald text-sm underline whitespace-nowrap ml-4">MODIFIER</button>
+                    </div>
+                </div>
+
+                <!-- BLOC 2 : ITINÉRAIRE (Verrouillé par défaut) -->
+                <div id="tour-section" class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 opacity-50 grayscale pointer-events-none transition-all duration-300 relative">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-dix-light"></div>
+                    
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
+                        <h2 class="text-lg text-dix-light font-oswald flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6.5W4a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg>
+                            2. CRÉATION DE LA TOURNÉE
+                        </h2>
+                        <button onclick="newTour(false)" class="text-xs bg-white border border-dix-light text-dix-light font-oswald px-3 py-1 rounded-full hover:bg-dix-light hover:text-white transition-colors flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            <span>VIDER / NOUVELLE</span>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-3 mb-6 font-georgia text-sm">
+                        <div class="flex-1">
+                            <label class="block font-semibold text-dix-text mb-1">Nom de la Tournée *</label>
+                            <input type="text" id="tName" list="tourNameSuggestions" placeholder="Ex: Tournée des Écoles" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
+                            <datalist id="tourNameSuggestions"></datalist>
+                        </div>
+                        <div class="w-1/3">
+                            <label class="block font-semibold text-dix-text mb-1">Jour</label>
+                            <select id="tDay" onchange="autoNameTour()" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                                <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option>
                             </select>
-                            <label style="font-size:0.9rem; cursor:pointer; color:var(--info); font-weight:bold; white-space:nowrap; display:flex; align-items:center; background:white; padding:8px; border:1px solid #dcdfe6; border-radius:4px;" title="Cochez si véhicule réfrigéré">
-                                <input type="checkbox" id="vFrigo" onchange="saveDepot()" style="margin:0 5px 0 0;"> ❄️ Frigo
-                            </label>
                         </div>
                     </div>
-                    <div class="form-group"><label>⛽ Énergie</label><select id="fType" onchange="updateView()"><option>Diesel</option><option>Essence</option><option>Électrique</option><option>GNV / Gaz</option><option>Hybride</option></select></div>
-                    <div class="form-group"><label>💧 Conso. (L/100km) ou (kwH/100 km)</label><input type="number" id="vCons" value="8.5" step="0.1" onchange="updateView()"></div>
-                    <div class="form-group"><label>💳 Prix (€/L) ou (€/kwH) </label><input type="number" id="fPrice" value="1.75" step="0.01" onchange="updateView()"></div>
-                    <div class="form-group"><label title="Coût d'usure, pneus, entretien, assurance ramené au km">🔧 Amort. / Entretien Véhicule (€/km)</label><input type="number" id="vAmort" value="0.25" step="0.01" onchange="updateView()"></div>
+
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 mb-6 font-georgia text-sm">
+                        <h3 class="font-oswald text-dix-light mb-3 text-base flex items-center">
+                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            AJOUTER UN ARRÊT
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                            <div class="col-span-1 sm:col-span-2">
+                                <label class="block font-semibold text-dix-light text-xs mb-1">Client / Lieu</label>
+                                <input type="text" id="sClient" placeholder="Ex: Biocoop Centre" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                            </div>
+                            <div class="col-span-1 sm:col-span-2">
+                                <label class="block font-semibold text-dix-light text-xs mb-1">Localisation</label>
+                                <div class="flex gap-2 relative">
+                                    <div class="w-full relative">
+                                        <input type="text" id="sAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'stop')" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                                        <div id="sAddr-list" class="autocomplete-items hidden"></div>
+                                    </div>
+                                    <button onclick="searchAddress('stop')" title="Rechercher l'adresse" class="bg-dix-light text-white px-3 rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center shadow-inner">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </button>
+                                    <button id="btn-t-stop" onclick="setMode('stop')" title="Cibler sur la carte" class="bg-gray-200 text-gray-600 px-3 rounded-xl hover:bg-gray-300 transition-colors flex items-center justify-center">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12h-3m-12 0H3m9 9v-3m0-12V3"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-dix-light text-xs mb-1">Type</label>
+                                <select id="sOpType" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                                    <option value="📦">📦 Livraison Client</option>
+                                    <option value="🚜">🚜 Collecte</option>
+                                    <option value="🏬">🏬 Point Relais</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-dix-light text-xs mb-1">Valeur (€)</label>
+                                <input type="number" id="sEuro" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl bg-green-50 border-dix-light">
+                            </div>
+                            <div class="col-span-1 sm:col-span-2">
+                                <label class="block font-semibold text-dix-light text-xs mb-1">Temps Arrêt (min)</label>
+                                <input type="number" id="sTime" value="15" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                            </div>
+                        </div>
+                        <button onclick="addStop()" class="w-full bg-dix-dark text-white font-oswald py-2 rounded-xl shadow hover:bg-opacity-90 transition-all flex justify-center items-center gap-2">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                            <span>AJOUTER À L'ITINÉRAIRE</span>
+                        </button>
+                    </div>
+
+                    <h4 class="font-oswald text-dix-light mb-2 text-sm border-b border-gray-100 pb-1 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-dix-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        📋 ORDRE DE PASSAGE (DRAG & DROP)
+                    </h4>
+                    <ul id="stops-list" class="min-h-[50px] space-y-2 mb-4"></ul>
+
+                    <!-- Légende du Ratio -->
+                    <div class="flex flex-col items-center gap-2 text-xs font-georgia bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4 justify-center">
+                        <div class="text-gray-600 text-center mb-1">
+                            <span class="font-oswald text-dix-dark text-sm">RATIO LOGISTIQUE</span><br>
+                            <span class="italic opacity-80">( Coût de l'étape ÷ Valeur des produits ) × 100</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="ratio-tag ratio-good">< 10 %</span>
+                            <span class="ratio-tag ratio-mid">10 % - 30 %</span>
+                            <span class="ratio-tag ratio-bad">> 30 %</span>
+                        </div>
+                    </div>
+
+                    <button onclick="saveCurrentTour()" class="w-full bg-dix-light text-white font-oswald text-lg py-3 rounded-xl shadow hover:-translate-y-0.5 transition-transform flex justify-center items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>ENREGISTRER CETTE TOURNÉE</span>
+                    </button>
                 </div>
+
             </div>
 
-            <!-- BLOC ORGANISATION LOGISTIQUE -->
-            <div class="header-row" style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #eee; flex-direction:column; gap:10px;">
-                 <label class="section-title">👤 Organisation Logistique</label>
-                 <div style="display:flex; gap:10px; width:100%; flex-wrap:wrap; align-items: flex-end;">
-                    <div class="form-group" style="flex: 1.2;">
-                        <label>Qui livre ?</label>
-                        <select id="driverType" style="font-weight:bold; color:var(--primary);"><option>Producteur.rice (Soi-même)</option><option>Salarié</option><option>Prestataire Extérieur</option></select>
-                    </div>
-                    <div class="form-group"><label>💶 Coût Personnel Chargé (€/h)</label><input type="number" id="cH" value="18" onchange="updateView()"></div>
-                    <div class="form-group"><label>📦 Temps de Préparation (min)</label><input type="number" id="tPrep" value="30" onchange="updateView()"></div>
-                    <div class="form-group"><label>⏱️ Temps de Chargement (min)</label><input type="number" id="tLoad" value="20" onchange="updateView()"></div>
-                </div>
-            </div>
-            
-            <!-- BLOC ESPACES DE TRAVAIL -->
-            <div class="header-row" style="background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #eee; flex-direction:column; gap:10px; margin-top:10px;">
-                <label class="section-title">🏭 Espaces de travail et surfaces</label>
-                <div class="infra-block">
-                    <div class="infra-item">
-                        <div class="infra-header">
-                            <span class="infra-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16"/><path d="M4 4v16"/><path d="M20 4v16"/><path d="M4 9h16"/><path d="M4 14h16"/><rect x="6" y="5" width="4" height="4"/><rect x="12" y="10" width="4" height="4"/></svg> Stockage Sec</span>
-                            <strong id="val-sec" class="infra-val">0 m²</strong>
-                        </div>
-                        <input type="range" id="surfSec" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('sec', this.value); saveDepot()">
-                    </div>
-                    <div class="infra-item">
-                        <div class="infra-header">
-                            <span class="infra-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M5 10h14"/><path d="M15 14v4"/></svg> Stockage Frais</span>
-                            <strong id="val-frais" class="infra-val">0 m²</strong>
-                        </div>
-                        <input type="range" id="surfFrais" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('frais', this.value); saveDepot()">
-                    </div>
-                    <div class="infra-item">
-                        <div class="infra-header">
-                            <span class="infra-label">🧊 Stock. Négatif (T°<0°)</span>
-                            <strong id="val-neg" class="infra-val">0 m²</strong>
-                        </div>
-                        <input type="range" id="surfNeg" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('neg', this.value); saveDepot()">
-                    </div>
-                    <div class="infra-item">
-                        <div class="infra-header">
-                            <span class="infra-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15h20"/><path d="M4 15v6"/><path d="M20 15v6"/><rect x="4" y="8" width="6" height="7"/><rect x="12" y="6" width="6" height="9"/></svg> Espace Prépa.</span>
-                            <strong id="val-prep" class="infra-val">0 m²</strong>
-                        </div>
-                        <input type="range" id="surfPrep" min="0" max="200" step="5" value="0" oninput="updateSurfaceDisplay('prep', this.value); saveDepot()">
-                    </div>
-                </div>
-            </div>
-
-            <button id="btn-validate-depot" onclick="lockDepot()">✅ Valider le Dépôt & Passer aux Arrêts</button>
-        </div>
-        
-        <div id="header-summary">
-            <div class="summary-text" id="summary-content">...</div>
-            <button class="btn-mini" style="background:var(--info);" onclick="unlockDepot()">Modifier ✏️</button>
-        </div>
-    </div>
-
-    <div class="main-container">
-        <div class="left-panel blocked-area" id="locked-section">
-            <div class="block-overlay" onclick="alertValiderDepot()"></div>
-            
-            <div class="card" style="border-left: 6px solid var(--accent); margin-bottom: 20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <h3 style="margin:0; font-size:1.1rem; color:var(--accent);">📅 Édition de la Tournée</h3>
-                    <button class="btn-new-tour" onclick="newTour()">➕ Nouvelle Tournée</button>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex: 1.5;">
-                        <label>Nom de la Tournée *</label>
-                        <input type="text" id="tName" list="tourNameSuggestions" placeholder="Ex: Tournée des Écoles" oninput="updateStatsTitle()">
-                        <datalist id="tourNameSuggestions"></datalist>
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>Jour</label>
-                        <select id="tDay" onchange="autoNameTour()">
-                            <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" style="border-left: 6px solid var(--success);">
-                <h3 style="margin-top:0; font-size:1.1rem;">📍 Ajouter un Arrêt</h3>
-                <div style="display:flex; gap:10px; margin-bottom:10px;">
-                    <div class="form-group" style="flex:1.5;"><label>Nom / Lieu</label><input type="text" id="sClient" placeholder="Ex: Restaurant Chez Paul"></div>
-                    <div class="form-group" style="flex:1;"><label>Opération</label><select id="sOpType"><option value="📦">📦 Livraison Client</option><option value="🚜">🚜 Collecte</option><option value="🏬">🏬 Point Relais</option></select></div>
-                </div>
-                <div class="form-group">
-                    <label>Localisation</label>
-                    <div style="display:flex; gap:5px;">
-                        <div style="flex:1; position:relative;">
-                            <input type="text" id="sAddr" placeholder="Adresse du client..." oninput="handleAddressInput(event, 'stop')">
-                            <div id="sAddr-list" class="autocomplete-items"></div>
-                        </div>
-                        <button class="btn-mini" style="background:var(--info);" onclick="searchAddress('stop')">🔍</button>
-                        <button class="btn-mini" id="btn-t-stop" style="background:#95a5a6;" onclick="setMode('stop')">🎯</button>
-                    </div>
-                </div>
-                <!-- VOLUME KG REMOVED -->
-                <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-                    <div class="form-group"><label>Valeur March. (€)</label><input type="number" id="sEuro" value="0"></div>
-                    <!-- VOLUME KG REMOVED -->
-                    <div class="form-group"><label>Temps Arrêt (min)</label><input type="number" id="sTime" value="15"></div>
-                </div>
+            <!-- PANNEAU DROIT : CARTE ET KPIS (50%) -->
+            <div class="w-full lg:w-1/2 flex flex-col gap-6">
                 
-                <button class="btn-main" style="background:var(--info); margin-top:20px;" onclick="addStop()">➕ Ajouter à la tournée</button>
-            </div>
-            
-            <h4 style="color:var(--text);">📋 Ordre de passage (Drag & Drop)</h4>
-            <ul id="stops-list"></ul>
-            
-            <div class="legend-bar">
-                <span class="legend-tag-title">Légende Ratio :</span>
-                <div class="legend-item ratio-good" style="padding: 2px 8px; border-radius: 4px;">< 10%</div>
-                <div class="legend-item ratio-mid" style="padding: 2px 8px; border-radius: 4px;">10-30%</div>
-                <div class="legend-item ratio-bad" style="padding: 2px 8px; border-radius: 4px;">> 30%</div>
-            </div>
+                <!-- CARTE -->
+                <div class="bg-white p-2 rounded-2xl shadow-md border border-gray-100">
+                    <div id="map" class="w-full h-[350px] rounded-xl z-10 bg-gray-200"></div>
+                </div>
 
-            <button id="btn-save-local" onclick="saveCurrentTour()">💾 SAUVEGARDER CETTE TOURNÉE</button>
-        </div>
+                <!-- KPIS TOURNÉE EN COURS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                     <div class="col-span-1 md:col-span-3 bg-dix-dark text-white p-4 rounded-2xl shadow-md flex justify-around items-center text-center">
+                         <div>
+                             <span class="block font-oswald text-xs opacity-80 tracking-widest">COÛT LOG. (TOURNÉE)</span>
+                             <span id="rTotal" class="block font-bold text-2xl">0.00 €</span>
+                         </div>
+                         <div class="hidden md:block w-px h-8 bg-white opacity-20"></div>
+                         <div>
+                             <span class="block font-oswald text-xs opacity-80 tracking-widest">VALEUR (TOURNÉE)</span>
+                             <span id="rVal" class="block font-bold text-2xl">0.00 €</span>
+                         </div>
+                         <div class="hidden md:block w-px h-8 bg-white opacity-20"></div>
+                         <div>
+                             <span class="block font-oswald text-xs opacity-80 tracking-widest text-dix-light">RATIO</span>
+                             <span id="rRatio" class="block font-bold text-2xl text-dix-light">0.0 %</span>
+                         </div>
+                     </div>
+                     <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                         <span class="block font-oswald text-[10px] text-gray-500 uppercase">Distance totale</span>
+                         <span id="rDist" class="block font-bold text-lg text-dix-dark">0 km</span>
+                     </div>
+                     <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                         <span class="block font-oswald text-[10px] text-gray-500 uppercase">Frais Véhicule</span>
+                         <span id="rCostTrans" class="block font-bold text-lg text-dix-dark">0 €</span>
+                     </div>
+                     <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+                         <span class="block font-oswald text-[10px] text-gray-500 uppercase">Frais RH</span>
+                         <span id="rCostOps" class="block font-bold text-lg text-dix-dark">0 €</span>
+                     </div>
+                </div>
 
-        <div class="right-panel">
-            <div id="map"></div>
-            <div class="kpi-container">
-                <div class="summary-banner">
-                    <div class="banner-header"><span style="font-size:1.4rem;">📝</span><span id="kpi-tour-title" style="font-weight:700;">RÉCAPITULATIF GLOBAL</span></div>
-                    <div class="banner-metrics">
-                        <div><small style="opacity:0.8">COÛT TOTAL TOURNÉE</small><br><span class="summary-value" id="rTotal">0 €</span></div>
-                        <div><small style="opacity:0.8">CA TOTAL TOURNÉE</small><br><span class="summary-value" id="rVal">0 €</span></div>
+                <!-- NOUVEAU BLOC : TEMPS DE TRAVAIL DÉTAILLÉ -->
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="font-oswald text-xs text-gray-500 uppercase">Répartition du temps de travail</span>
+                        <span id="rTotalTime" class="font-bold text-dix-dark text-lg">0h00</span>
+                    </div>
+                    <!-- Barre de progression -->
+                    <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
+                        <div id="bar-route" class="h-full bg-dix-light transition-all duration-500" style="width: 0%" title="Temps au volant"></div>
+                        <div id="bar-manu" class="h-full bg-dix-dark transition-all duration-500" style="width: 0%" title="Préparation & Arrêts"></div>
+                    </div>
+                    <!-- Légende texte -->
+                    <div class="flex justify-between mt-2 text-[10px] sm:text-xs font-georgia text-gray-500">
+                        <div class="flex items-center gap-1">
+                            <span class="w-3 h-3 rounded-full bg-dix-light inline-block"></span> 
+                            <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6.5W4a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg> Route : <span id="val-route" class="font-bold text-gray-700 ml-1">0h00</span></span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-3 h-3 rounded-full bg-dix-dark inline-block"></span> 
+                            <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Prépa & Arrêts : <span id="val-manu" class="font-bold text-gray-700 ml-1">0h00</span></span>
+                        </div>
                     </div>
                 </div>
-                <div class="kpi-card"><div class="kpi-title">Distance & Route</div><div class="kpi-value" id="rDist">0 km</div><div style="font-size:0.7rem;" id="rTime">0h00 conduite</div></div>
-                
-                <div class="kpi-card">
-                    <div class="kpi-title">Frais Véhicule</div>
-                    <div class="kpi-value" id="rCostTrans">0 €</div>
-                    <div style="font-size:0.6rem; color:var(--text);">Carburant + Amort.</div>
+
+                <!-- BLOC 3 : PROJET GLOBAL & ENVOI -->
+                <div class="bg-dix-bg rounded-2xl shadow-inner p-6 border border-gray-200 mt-2">
+                    <h2 class="text-lg text-dix-light font-oswald mb-4 border-b border-gray-300 pb-2 flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        3. VOS TOURNÉES SAUVEGARDÉES
+                    </h2>
+                    
+                    <ul id="saved-tours-list" class="space-y-2 mb-4 font-georgia text-sm empty:hidden"></ul>
+                    <div id="no-tours-msg" class="text-center text-gray-500 italic font-georgia text-sm py-4">Aucune tournée sauvegardée pour le moment.</div>
                 </div>
 
-                <div class="kpi-card"><div class="kpi-title">Frais Personnel</div><div class="kpi-value" id="rCostOps">0 €</div><div style="font-size:0.7rem;" id="rOps">0h00 service</div></div>
-                <div class="kpi-card" style="grid-column: span 3; border-top: 3px solid var(--accent);">
-                    <div class="kpi-title">RATIO LOGISTIQUE</div>
-                    <div class="kpi-value" style="color:var(--accent); font-size:1.8rem;" id="rRatio">0 %</div>
-                    <div style="font-size:0.7rem; color:var(--text);">(Coût Logistique / Chiffre d'Affaires)</div>
+            </div>
+        </div>
+
+        <!-- NOUVEAU : SYNTHÈSE GLOBALE EN PLEINE LARGEUR -->
+        <div id="global-kpis" class="hidden bg-white p-6 md:p-8 rounded-2xl border-t-8 border-dix-light shadow-xl mt-8 mb-6">
+            <h4 class="font-oswald text-dix-light text-center mb-8 text-2xl tracking-wide flex items-center justify-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                SYNTHÈSE GLOBALE DES TOURNÉES ENREGISTRÉES
+            </h4>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                <!-- Colonne 1 : Indicateurs Financiers -->
+                <div class="flex justify-around items-center text-center">
+                    <div>
+                        <span class="block font-oswald text-xs text-gray-500 uppercase">COÛT TOTAL</span>
+                        <span id="gCost" class="block font-bold text-2xl text-dix-dark">0.00 €</span>
+                    </div>
+                    <div class="w-px h-12 bg-gray-200"></div>
+                    <div>
+                        <span class="block font-oswald text-xs text-gray-500 uppercase">VALEUR TOTALE</span>
+                        <span id="gVal" class="block font-bold text-2xl text-dix-dark">0.00 €</span>
+                    </div>
+                    <div class="w-px h-12 bg-gray-200"></div>
+                    <div>
+                        <span class="block font-oswald text-xs text-gray-500 uppercase text-dix-light">RATIO GLOBAL</span>
+                        <span id="gRatio" class="block font-bold text-2xl text-dix-light">0.0 %</span>
+                    </div>
+                </div>
+
+                <!-- Colonne 2 : Volumes Physiques -->
+                <div class="flex flex-col justify-center items-center font-georgia text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-200 w-full h-full">
+                    <div class="mb-3 text-base flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg> Distance totale : <span id="gDist" class="font-bold text-dix-dark text-xl ml-2">0 km</span></div>
+                    <div class="text-base flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Temps de travail : <span id="gTime" class="font-bold text-dix-dark text-xl ml-2">0h00</span></div>
+                </div>
+
+                <!-- Colonne 3 : Répartition -->
+                <div class="w-full">
+                    <span class="block font-oswald text-xs text-gray-500 uppercase mb-3 text-center tracking-wide">RÉPARTITION DES COÛTS LOGISTIQUES</span>
+                    <div class="w-full h-4 bg-gray-100 rounded-full overflow-hidden flex shadow-inner mb-3">
+                        <div id="gBarTrans" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%" title="Frais Véhicule"></div>
+                        <div id="gBarRH" class="h-full bg-dix-dark transition-all duration-500" style="width: 0%" title="Frais RH"></div>
+                    </div>
+                    <div class="flex justify-between text-xs font-georgia text-gray-500">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> 
+                            <span>Véhicule : <span id="gCostTrans" class="font-bold text-gray-700">0 €</span> (<span id="gPctTrans">0</span>%)</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-dix-dark inline-block"></span> 
+                            <span>Main d'œuvre : <span id="gCostRH" class="font-bold text-gray-700">0 €</span> (<span id="gPctRH">0</span>%)</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card" style="border-left: 6px solid var(--lib); margin-top:30px; margin-bottom: 60px;">
-        <h3 style="margin-top:0; font-size:1.2rem; color:var(--lib); margin-bottom:15px;">📂 Mes Tournées Enregistrées (Dossier Complet)</h3>
-        
-        <div id="global-totals-container" class="global-stats-box" style="display:none;">
-            <div class="gs-item"><div class="gs-label">💰 CA TOTAL</div><div class="gs-value" id="gt-ca">0 €</div></div>
-            <div class="gs-item"><div class="gs-label">📉 COÛT TOTAL</div><div class="gs-value" id="gt-cost">0 €</div></div>
-            <div class="gs-item"><div class="gs-label">⚖️ RATIO GLOBAL</div><div class="gs-value" id="gt-ratio" style="color:var(--accent);">0 %</div></div>
-            <div class="gs-item"><div class="gs-label">🛣️ DISTANCE</div><div class="gs-value" id="gt-dist">0 km</div></div>
-            <div class="gs-item"><div class="gs-label">⏱️ TEMPS</div><div class="gs-value" id="gt-time">0h00</div></div>
-        </div>
-
-        <div id="tours-list-container">
-            <div style="padding:20px; color:#999; font-style:italic; text-align:center;">Aucune tournée enregistrée pour l'instant. Utilisez le formulaire ci-dessus.</div>
-        </div>
-        
-        <div class="backup-controls">
-            <button class="btn-mini btn-backup" onclick="downloadBackup()">📥 Sauvegarder mes données (JSON)</button>
-            <button class="btn-mini btn-backup" onclick="document.getElementById('fileInput').click()">📤 Restaurer une sauvegarde</button>
-            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="uploadBackup(this)">
-        </div>
-
-        <div style="display:flex; justify-content:center; margin-top:20px;">
-            <button id="btn-export-project" onclick="openRgpdModal()">🚀 ENVOYER LE PROJET A LA CATL</button>
-        </div>
-    </div>
-    
-    <!-- STICKY BOTTOM BAR (NOUVEAU) -->
-    <div id="sticky-send-bar" class="sticky-send-bar">
-        <span class="sticky-text">🚀 Votre dossier est prêt ?</span>
-        <button class="btn-sticky-send" onclick="openRgpdModal()">
-            CLIQUEZ ICI POUR ENVOYER A LA CATL
+        <!-- BOUTON D'ENVOI (Lui aussi en pleine largeur) -->
+        <button id="btn-send-supabase" onclick="sendProjectData()" class="hidden w-full bg-dix-dark text-white font-oswald text-xl py-5 rounded-2xl shadow-xl hover:-translate-y-1 transition-transform items-center justify-center gap-2 mb-8">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <span>TRANSMETTRE CE DOSSIER (DÉMO)</span>
         </button>
+
     </div>
-    
-      
-    <!-- PIED DE PAGE AVEC MENTIONS LEGALES -->
-    <div class="dix-footer">
-        <div style="display:flex; align-items: center; gap: 15px;">
-            <span>Outil conçu et réalisé par</span>
-            <a href="http://www.dix-autrement.fr" target="_blank" class="dix-link">
-                <img src="https://github.com/pierrealainmory-hue/logistique-data-projet/blob/main/logo%20dix%20solutions.jpg?raw=true" alt="Logo DIX Solutions" class="dix-logo-small">
-            </a>
-              
-            <span>| </span>
-            <a href="http://www.dix-autrement.fr" target="_blank" class="dix-link">www.dix-autrement.fr</a>
-             <span>| </span>
-            <!-- COMPTEUR DE VISITE -->
-           <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-            <img src="https://visitor-badge.laobi.icu/badge?page_id=pierrealainmory-hue.logistique-catl &left_text=Visites&left_color=%232c3e50&right_color=%23e67e22" alt="Compteur de visites">
-           </div>
-        </div>
-        <div style="font-size: 0.75rem; color: #95a5a6; margin-top: 10px; text-align: center; line-height: 1.4;">
-            © 2025-2026 Cabinet DIX Autrement. Tous droits réservés.<br>
-            Toute reproduction, copie ou utilisation non autorisée de cet outil ou de son code source est strictement interdite.
+
+    <!-- MODAL SUCCES -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center fade-in">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border-t-8 border-dix-light">
+            <div class="flex justify-center mb-4 text-dix-light">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h2 class="font-oswald text-2xl text-dix-dark mb-2">DOSSIER TRANSMIS</h2>
+            <p id="success-message-text" class="font-georgia text-dix-text text-sm mb-6">Vos données de simulation ont bien été enregistrées dans l'espace de démonstration sécurisé (Table: tournees_test).</p>
+            <button onclick="document.getElementById('success-modal').classList.add('hidden'); location.reload();" class="bg-gray-200 text-dix-dark font-oswald px-6 py-2 rounded-xl hover:bg-gray-300 transition-colors">
+                RETOUR À L'ACCUEIL
+            </button>
         </div>
     </div>
 
-    <!-- TOAST ELEMENT -->
-    <div id="toast">✨ Nouvelle tournée créée</div>
-
-    <!-- MODAL SAVE ACTION -->
-    <div id="save-action-modal" class="modal">
-        <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <div class="modal-header" style="color:var(--success); border:none; padding-bottom:0;">✅ Tournée Sauvegardée !</div>
-            <div class="modal-body" style="padding-top:10px;">
-                <p style="font-size:1.1rem; color:#555;">Votre tournée a bien été enregistrée dans le dossier.</p>
-                <p style="margin-bottom:25px;">Que souhaitez-vous faire maintenant ?</p>
-                
-                <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                    <button class="btn-confirm" onclick="closeSaveActionModal()" style="background:white; color:var(--primary); border:2px solid var(--primary); width:80%;">
-                        ✏️ Continuer à modifier cette tournée
-                    </button>
-                    
-                    <button class="btn-confirm" onclick="triggerNewTourFromModal()" style="background:var(--accent); width:80%;">
-                        ➕ Créer une NOUVELLE tournée
-                    </button>
-
-                    <div style="display:flex; align-items:center; width:80%; gap:10px;">
-                        <hr style="flex:1; border-top:1px solid #eee;"> <span style="font-size:0.8rem; color:#999;">OU J'AI FINI</span> <hr style="flex:1; border-top:1px solid #eee;">
-                    </div>
-                    
-                    <!-- NOUVEAU BOUTON D'ACTION DIRECTE -->
-                    <button class="btn-confirm" onclick="triggerSendFromModal()" style="background:var(--lib); width:90%; font-size:1.1rem; padding:15px; border:2px solid var(--lib); box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3);">
-                        🚀 TERMINER & ENVOYER A LA CATL
-                    </button>
-                </div>
+    <!-- MODAL OPTIONS APRES SAUVEGARDE -->
+    <div id="save-options-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center fade-in">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border-t-8 border-dix-light">
+            <div class="flex justify-center mb-4 text-dix-dark">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+            </div>
+            <h2 class="font-oswald text-2xl text-dix-dark mb-2">TOURNÉE ENREGISTRÉE</h2>
+            <p class="font-georgia text-dix-text text-sm mb-6">Que souhaitez-vous faire maintenant ?</p>
+            <div class="space-y-3">
+                <button onclick="handleSaveOption('new')" class="w-full bg-dix-light text-white font-oswald py-3 rounded-xl hover:bg-green-600 transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>CRÉER UNE NOUVELLE (VIDER LA CARTE)</span>
+                </button>
+                <button onclick="handleSaveOption('variant')" class="w-full bg-gray-100 text-dix-dark font-oswald py-3 rounded-xl hover:bg-gray-200 transition-colors border border-gray-200 shadow-sm flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                    <span>CRÉER UNE VARIANTE (GARDER LA CARTE)</span>
+                </button>
+                <button onclick="handleSaveOption('finish')" class="w-full bg-dix-dark text-white font-oswald py-3 rounded-xl hover:bg-opacity-90 transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span>TERMINER ET VOIR LA SYNTHÈSE</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL RGPD -->
-    <div id="rgpd-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">🛡️ Consentement & Données</div>
-            <div class="modal-body">
-                <p>En soumettant ces données, vous participez à une étude de <strong>diagnostic logistique territorial</strong>.</p>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li><strong>Usage :</strong> Optimisation des flux et recherche de solutions mutualisées.</li>
-                    <li><strong>Accès :</strong> Données accessibles uniquement par l'équipe projet et le cabinet DIX AUTREMENT.</li>
-                    <li><strong>Confidentialité :</strong> Vos données ne seront pas divulguées publiquement sans votre accord.</li>
-                </ul>
-                <p>En cliquant sur "J'accepte", vous validez l'utilisation de ces informations dans ce cadre exclusif.</p>
+    <!-- BANDEAU STICKY RAPPEL ENVOI -->
+    <div id="sticky-send-banner" class="hidden fixed bottom-0 left-0 w-full bg-white border-t-4 border-dix-light p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] z-40 transition-transform duration-500 transform translate-y-full">
+        <div class="max-w-[1400px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8 text-yellow-500 animate-pulse flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span class="font-georgia text-sm text-dix-dark font-bold">Vous avez des tournées enregistrées. N'oubliez pas de transmettre votre dossier pour finaliser la simulation !</span>
             </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeRgpdModal()">Annuler</button>
-                <button class="btn-confirm" onclick="confirmAndSend()">✅ J'accepte & J'envoie</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- MODAL SUCCES & REBOND -->
-    <div id="success-modal" class="modal">
-        <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <div class="modal-header" style="color:#27ae60; border:none; padding-bottom:0;">🎉 Transmission Réussie !</div>
-            <div class="modal-body" style="padding-top:10px;">
-                <p style="font-size:1.1rem;">Vos données de tournée ont bien été reçues par la CATL.</p>
-                <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-                <p style="margin-bottom:15px;"><strong>Aidez-nous à aller plus loin :</strong></p>
-                <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Seriez-vous d'accord pour préciser quelques informations logistiques supplémentaires via un court formulaire ?</p>
-                <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-                    <button class="btn-confirm" onclick="openFormulaire()" style="background:var(--accent);">📝 Oui, accéder au formulaire</button>
-                    <button class="btn-cancel" onclick="closeSuccessModal()" style="background:#bdc3c7;">Non, merci</button>
-                </div>
-            </div>
+            <button id="btn-sticky-send" onclick="sendProjectData()" class="bg-dix-light text-white font-oswald px-6 py-2 rounded-xl hover:bg-green-600 transition-colors text-sm whitespace-nowrap shadow-md flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <span>TRANSMETTRE LE DOSSIER</span>
+            </button>
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- SCRIPT METIER -->
     <script>
-        // CONFIGURATION SUPABASE
+        // Configuration Supabase
         const SUPABASE_URL = 'https://lxoqhmfpnodyfnavmhmn.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_-LPq5CilDsNJcBuOKSG_hw_2nZUZrYg';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let map, markers, routeLayer, stops = [], mode = 'prod', pData = { lat:null, lon:null, addr:"" }, sTemp = { lat:null, lon:null };
-        let lastRouteData = null; 
-        let savedTours = [];
-        let currentTourId = null; 
-        let currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0 };
+        // Variables Globales
+        let map, markers, routeLayer;
+        let pData = { lat:null, lon:null, addr:"", name:"" };
+        let stops = [];
+        let savedTours = []; 
+        let sTemp = { lat:null, lon:null };
+        let mode = 'prod';
+        let currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0, driveTime: 0 };
+        let currentDist = 0, currentDriveTime = 0;
         let typingTimer;
-
-        // VARIABLE SORTABLE (V116)
+        let calcTimeout;
         let sortableInstance = null;
 
-        window.onload = function() {
-            // CENTRAGE LIEGE
-            map = L.map('map').setView([50.6325, 5.5797], 11);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // --- GESTION DES VALEURS PAR DEFAUT (ACCORDEONS) ---
+        const defaultValues = {
+            trans: { vType: "Fourgon compact (3-6m³)", vFrigo: false, fType: "Diesel", vCons: 8.5, fPrice: 1.75, vAmort: 0.25 },
+            rh: { driverType: "Entrepreneur·euse Salarié·e (Soi-même)", tPrep: 30, tLoad: 20, cH: 20 },
+            stock: { surfPrep: 0, surfSec: 0, surfFrais: 0, surfNeg: 0 }
+        };
+
+        // --- GESTION MULTISELECT METIERS ---
+        function toggleJobMenu() { 
+            const menu = document.getElementById('pJobMenu'); 
+            menu.classList.toggle('hidden'); 
+        }
+        
+        function updateJobSelection() {
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
+            let selected = []; 
+            checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.value); });
+            const display = document.getElementById('pJobDisplay');
+            if(selected.length === 0) { 
+                display.innerText = "-- Choisir --"; display.classList.remove('has-value'); 
+            } else if(selected.length <= 2) { 
+                display.innerText = selected.join(", "); display.classList.add('has-value'); 
+            } else { 
+                display.innerText = selected.length + " métiers sélectionnés"; display.classList.add('has-value'); 
+            }
+            checkDepotValidity();
+        }
+
+        function toggleDefaults(section, isDefault) {
+            const box = document.getElementById('box-' + section);
+            if(isDefault) {
+                box.classList.add('opacity-50', 'pointer-events-none');
+                for(let key in defaultValues[section]) {
+                    const el = document.getElementById(key);
+                    if(el) {
+                        if(el.type === 'checkbox') el.checked = defaultValues[section][key];
+                        else el.value = defaultValues[section][key];
+                        if(el.type === 'range') el.dispatchEvent(new Event('input'));
+                    }
+                }
+                handleParamsChange();
+            } else {
+                box.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // --- SAS DE SÉCURITÉ ---
+        async function verifyAccess() {
+            const emailInput = document.getElementById('email-input').value.trim().toLowerCase();
+            const errorMsg = document.getElementById('error-message');
+            const btn = document.getElementById('btn-login');
+
+            if (!emailInput) { errorMsg.innerText = "Veuillez renseigner un courriel."; errorMsg.classList.remove('hidden'); return; }
+
+            if (emailInput.endsWith('@dix-autrement.fr') || emailInput === 'admin') {
+                grantAccess(emailInput + " (Démo)");
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+            btn.innerHTML = "VÉRIFICATION...";
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabaseClient.from('acces_demo').select('*');
+                if (error) throw new Error("Erreur BDD");
+
+                const isAuth = data && data.some(row => row.email && row.email.toLowerCase().trim() === emailInput);
+                if (isAuth) grantAccess(emailInput);
+                else throw new Error("Non autorisé");
+
+            } catch (err) {
+                errorMsg.innerText = err.message === "Non autorisé" ? "Adresse email non autorisée." : "Erreur technique BDD.";
+                errorMsg.classList.remove('hidden');
+                btn.innerHTML = "<svg class='w-5 h-5 mr-2 inline' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1'></path></svg> ACCÉDER À L'OUTIL";
+                btn.disabled = false;
+            }
+        }
+
+        function grantAccess(displayEmail) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('user-display').innerText = displayEmail;
+            
+            setTimeout(() => {
+                initMap();
+                initSortable();
+                updateTourNameSuggestions();
+                autoNameTour();
+                document.addEventListener("click", function(e) {
+                    closeAllLists(e);
+                    const menu = document.getElementById('pJobMenu');
+                    const display = document.getElementById('pJobDisplay');
+                    if (menu && display && !menu.contains(e.target) && !display.contains(e.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            }, 100);
+        }
+
+        // --- CARTE LEAFLET ---
+        function initMap() {
+            if (map) return;
+            map = L.map('map').setView([43.2128, 2.3536], 12); 
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { 
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+            
             markers = L.layerGroup().addTo(map);
             routeLayer = L.layerGroup().addTo(map);
             map.on('click', onMapClick);
-            setTimeout(function(){ map.invalidateSize(); }, 500);
-            
-            // FIX: Initialisation propre du sortable une fois le DOM prêt
-            const el = document.getElementById('stops-list');
-            if(el) {
-                Sortable.create(el, { animation: 150, handle: '.handle', onEnd: reorderStops });
+            setTimeout(() => map.invalidateSize(), 300);
+        }
+
+        function onMapClick(e) {
+            let lat = e.latlng.lat, lon = e.latlng.lng; 
+            if(mode === 'prod') {
+                pData = { lat: lat, lon: lon, addr: "Recherche en cours..." };
+                updateView(); 
+            } else {
+                sTemp = { lat: lat, lon: lon };
+                L.circleMarker(e.latlng, {color:'#549e39', radius: 8, fillOpacity: 0.8}).addTo(markers);
             }
 
-            // Fermeture auto des listes
-            document.addEventListener("click", function (e) { 
-                closeAllLists(e.target);
-                const menu = document.getElementById('pJobMenu');
-                const display = document.getElementById('pJobDisplay');
-                if (menu && display && !menu.contains(e.target) && !display.contains(e.target)) {
-                    menu.style.display = 'none';
-                }
-            });
-
-            loadGlobalDepot(); 
-            loadToursLibrary(); 
-            setMode('prod'); 
-            checkProducerValidation();
-            autoNameTour();
-            updateTourNameSuggestions();
-        };
-
-        // --- UX HELPER ---
-        function alertValiderDepot() {
-            alert("⚠️ ACTION REQUISE\n\nVeuillez d'abord valider le Dépôt (Formulaire du haut, bouton VERT) avant de pouvoir créer ou éditer une tournée.");
-            document.getElementById('pName').focus();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        
-        function showToast(msg) {
-            var x = document.getElementById("toast");
-            x.innerText = msg;
-            x.className = "show";
-            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+            .then(r=>r.json()).then(d=>{ 
+                const addr = d.display_name || "Adresse inconnue";
+                if(mode==='prod'){ 
+                    pData.addr = addr; 
+                    document.getElementById('pAddr').value = addr; 
+                    checkDepotValidity(); 
+                } else { 
+                    document.getElementById('sAddr').value = addr; 
+                } 
+            }).catch(e => console.log("Erreur adresse", e));
         }
 
-        // --- MULTI-SELECT ---
-        function toggleJobMenu() { const menu = document.getElementById('pJobMenu'); menu.style.display = (menu.style.display === 'block') ? 'none' : 'block'; }
-        function updateJobSelection() {
-            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
-            let selected = []; checkboxes.forEach(cb => { if(cb.checked) selected.push(cb.value); });
-            const display = document.getElementById('pJobDisplay');
-            if(selected.length === 0) { display.innerText = "-- Choisir --"; display.classList.remove('has-value'); } 
-            else if(selected.length <= 2) { display.innerText = selected.join(", "); display.classList.add('has-value'); } 
-            else { display.innerText = selected.length + " métiers sélectionnés"; display.classList.add('has-value'); }
-            saveDepot();
-        }
-
-        // --- AUTOCOMPLETE ---
+        // --- AUTOCOMPLÉTION ---
         function handleAddressInput(e, type) {
             clearTimeout(typingTimer);
             const val = e.target.value;
-            const listId = type === 'prod' ? 'pAddr-list' : 'sAddr-list';
-            if (!val || val.length < 3) { document.getElementById(listId).innerHTML = ""; return; }
+            const listEl = document.getElementById(type === 'prod' ? 'pAddr-list' : 'sAddr-list');
+            
+            if (!val || val.length < 3) { listEl.innerHTML = ""; listEl.classList.add('hidden'); return; }
+            
             typingTimer = setTimeout(() => {
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`)
                 .then(r => r.json()).then(data => {
-                    const list = document.getElementById(listId); list.innerHTML = "";
+                    listEl.innerHTML = "";
+                    if(data.length > 0) listEl.classList.remove('hidden'); else listEl.classList.add('hidden');
                     data.forEach(item => {
                         const div = document.createElement("div");
                         div.innerHTML = "📍 " + item.display_name;
-                        div.addEventListener("mousedown", function(e) {
-                            e.preventDefault(); 
-                            selectAddress(item, type, list);
-                        });
-                        list.appendChild(div);
+                        div.addEventListener("mousedown", (ev) => { ev.preventDefault(); selectAddress(item, type, listEl); });
+                        listEl.appendChild(div);
                     });
                 });
             }, 300);
         }
 
         function selectAddress(item, type, listElement) {
-            const inputId = type === 'prod' ? 'pAddr' : 'sAddr';
-            document.getElementById(inputId).value = item.display_name;
-            listElement.innerHTML = ""; 
-            const lat = parseFloat(item.lat); const lon = parseFloat(item.lon);
-            map.setView([lat, lon], 15);
+            document.getElementById(type === 'prod' ? 'pAddr' : 'sAddr').value = item.display_name;
+            listElement.innerHTML = ""; listElement.classList.add('hidden');
+            const lat = parseFloat(item.lat), lon = parseFloat(item.lon);
+            map.setView([lat, lon], 14);
             
             if (type === 'prod') { 
                 pData = { lat: lat, lon: lon, addr: item.display_name }; 
-                checkProducerValidation(); 
-                updateView(); 
+                checkDepotValidity(); updateView(); 
             } else { 
                 sTemp = { lat: lat, lon: lon }; 
-                L.circleMarker([lat, lon], {color:'red'}).addTo(markers); 
+                L.circleMarker([lat, lon], {color:'#549e39', radius: 8, fillOpacity: 0.8}).addTo(markers); 
             }
         }
-        
-        function closeAllLists(elmnt) {
-            const items = document.getElementsByClassName("autocomplete-items");
-            for (let i = 0; i < items.length; i++) { 
-                if (elmnt != items[i] && elmnt != document.getElementById("pAddr") && elmnt != document.getElementById("sAddr")) {
-                    items[i].innerHTML = ""; 
+
+        function searchAddress(type) {
+            const val = document.getElementById(type === 'prod' ? 'pAddr' : 'sAddr').value;
+            if(val) handleAddressInput({target: {value: val}}, type);
+        }
+
+        function closeAllLists(e) {
+            ['pAddr-list', 'sAddr-list'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && e && e.target && e.target.id !== 'pAddr' && e.target.id !== 'sAddr') { 
+                    el.innerHTML = ''; 
+                    el.classList.add('hidden'); 
                 }
-            }
+            });
         }
 
-        // --- INFRA ---
-        function updateSurfaceDisplay(type, val) {
-            const el = document.getElementById('val-' + type);
-            if(parseInt(val) >= 200) el.innerText = "> 200 m²";
-            else el.innerText = val + " m²";
-        }
-
-        // --- MAP CLIC ---
-        function onMapClick(e) { 
-            if (mode === 'stop' && document.getElementById('locked-section').classList.contains('blocked-area')) {
-                 // FIX UX: Alert user they need to validate depot first
-                 alertValiderDepot();
-                 return;
-            }
-            
-            let lat = e.latlng.lat, lon = e.latlng.lng; 
-            if(mode === 'prod') {
-                pData = { lat: lat, lon: lon, addr: "Recherche..." };
-                updateView(); 
+        // --- GESTION DEPOT ---
+        function checkDepotValidity() {
+            const name = document.getElementById('pName').value.trim();
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]:checked');
+            const jobOk = checkboxes.length > 0;
+            const btn = document.getElementById('btn-validate-depot');
+            if(name.length > 0 && jobOk && pData.lat) {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed'); btn.disabled = false;
             } else {
-                sTemp = { lat: lat, lon: lon };
-                L.circleMarker(e.latlng, {color:'red'}).addTo(markers);
+                btn.classList.add('opacity-50', 'cursor-not-allowed'); btn.disabled = true;
             }
-
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-            .then(r=>r.json())
-            .then(d=>{ 
-                const addr = d.display_name || "Adresse inconnue";
-                if(mode==='prod'){ 
-                    pData.addr = addr; 
-                    document.getElementById('pAddr').value = addr; 
-                    checkProducerValidation(); 
-                } else { 
-                    document.getElementById('sAddr').value = addr; 
-                } 
-            }).catch(e => { console.log("Erreur adresse", e); });
         }
 
-        // --- LOGIC ---
-        function formatMinutes(mins) { let h = Math.floor(mins / 60); let m = Math.round(mins % 60); return `${h}h${m.toString().padStart(2,'0')}`; }
+        function lockDepot() {
+            pData.name = document.getElementById('pName').value.trim();
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]:checked');
+            let selectedJobs = Array.from(checkboxes).map(cb => cb.value).join(', ');
+            
+            document.getElementById('depot-form').classList.add('hidden');
+            
+            const summary = document.getElementById('depot-summary');
+            summary.classList.remove('hidden'); summary.classList.add('flex');
+            
+            // MISE À JOUR DE L'ICÔNE DANS LE RÉCAPITULATIF
+            document.getElementById('summary-content').innerHTML = `
+                <svg class="w-4 h-4 inline-block mr-2 text-dix-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <b>${pData.name}</b> <span class="text-gray-400 text-xs inline-block ml-2 align-middle max-w-[150px] truncate" title="${selectedJobs}">(${selectedJobs})</span> - ${pData.addr.split(',')[0]}
+            `;
+            
+            const tourSec = document.getElementById('tour-section');
+            tourSec.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
+            setMode('stop'); setTimeout(() => map.invalidateSize(), 200);
+        }
+
+        function unlockDepot() {
+            document.getElementById('depot-summary').classList.add('hidden'); document.getElementById('depot-summary').classList.remove('flex');
+            document.getElementById('depot-form').classList.remove('hidden');
+            document.getElementById('tour-section').classList.add('opacity-50', 'grayscale', 'pointer-events-none');
+            setMode('prod');
+        }
+
+        function setMode(m) { 
+            mode = m; 
+            const activeClass = 'bg-dix-light text-white px-3 rounded-xl transition-colors flex items-center justify-center shadow-inner';
+            const inactiveClass = 'bg-gray-200 text-gray-600 px-3 rounded-xl hover:bg-gray-300 transition-colors flex items-center justify-center';
+            
+            document.getElementById('btn-t-prod').className = m === 'prod' ? activeClass : inactiveClass; 
+            document.getElementById('btn-t-stop').className = m === 'stop' ? activeClass : inactiveClass; 
+        }
+
+        // --- GESTION DES ARRÊTS ---
         function updateTourNameSuggestions() { 
             const dataList = document.getElementById('tourNameSuggestions'); 
+            if(!dataList) return;
             dataList.innerHTML = ''; 
             const defaults = ["Tournée Restaurants", "Tournée Cantines", "Tournée Magasins", "Tournée Particuliers", "Tournée Écoles", "Tournée AMAP"]; 
             const existing = (savedTours || []).map(t => t.name); 
@@ -864,351 +944,36 @@ Test<!DOCTYPE html>
             return prefix + (max + 1); 
         }
 
-        function autoNameTour() { 
-            try {
-                if(!currentTourId || document.getElementById('tName').value === "") { 
-                    const day = document.getElementById('tDay').value; 
-                    const newName = generateDefaultName(day); 
-                    document.getElementById('tName').value = newName; 
-                    updateStatsTitle(); 
-                } 
-            } catch(e) {
-                console.error("Erreur autoNameTour", e);
+        function autoNameTour() {
+            const day = document.getElementById('tDay').value;
+            const input = document.getElementById('tName');
+            if(!input.value.trim() || input.value.startsWith("Tournée du") || input.value.startsWith("TOURNEE -")) {
+                input.value = generateDefaultName(day);
             }
         }
 
-        function saveDepot() {
-            pData.name = document.getElementById('pName').value; pData.addr = document.getElementById('pAddr').value;
-            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
-            let selectedJobs = []; checkboxes.forEach(cb => { if(cb.checked) selectedJobs.push(cb.value); });
-
-            const depotSettings = { 
-                pData: pData, 
-                job: selectedJobs, 
-                mail: document.getElementById('pMail').value,
-                infra: {
-                    sec: document.getElementById('surfSec').value,
-                    frais: document.getElementById('surfFrais').value,
-                    neg: document.getElementById('surfNeg').value,
-                    prep: document.getElementById('surfPrep').value
-                },
-                veh: { 
-                    type: document.getElementById('vType').value, 
-                    fuel: document.getElementById('fType').value, 
-                    cons: document.getElementById('vCons').value, 
-                    price: document.getElementById('fPrice').value, 
-                    amort: document.getElementById('vAmort').value, 
-                    frigo: document.getElementById('vFrigo').checked,
-                    driver: document.getElementById('driverType').value, 
-                    cH: document.getElementById('cH').value, 
-                    tPrep: document.getElementById('tPrep').value, 
-                    tLoad: document.getElementById('tLoad').value 
-                } 
-            };
-            try {
-                localStorage.setItem('pnr_logistique_v83_clean', JSON.stringify(depotSettings)); 
-            } catch(e) { console.error("Save depot error", e); }
+        function newTour(skipConfirm) {
+            if(!skipConfirm && stops.length > 0 && !confirm("Vider la carte pour créer une nouvelle tournée ?")) return;
+            stops = []; sTemp = { lat: null, lon: null };
+            document.getElementById('sClient').value = ""; document.getElementById('sAddr').value = "";
+            document.getElementById('tName').value = ""; autoNameTour(); updateView();
         }
 
-        function loadGlobalDepot() {
-            let s = localStorage.getItem('pnr_logistique_v83_clean');
-            if(s) { const d = JSON.parse(s); pData = d.pData || { lat:null, lon:null, addr:"" }; document.getElementById('pName').value = pData.name || ""; document.getElementById('pAddr').value = pData.addr || ""; 
-            if(d.job && Array.isArray(d.job)) {
-                const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
-                checkboxes.forEach(cb => { if(d.job.includes(cb.value)) cb.checked = true; });
-                updateJobSelection();
-            }
-            if(d.mail) document.getElementById('pMail').value = d.mail;
-            if(d.infra) {
-                document.getElementById('surfSec').value = d.infra.sec || 0; updateSurfaceDisplay('sec', d.infra.sec || 0);
-                document.getElementById('surfFrais').value = d.infra.frais || 0; updateSurfaceDisplay('frais', d.infra.frais || 0);
-                document.getElementById('surfNeg').value = d.infra.neg || 0; updateSurfaceDisplay('neg', d.infra.neg || 0);
-                document.getElementById('surfPrep').value = d.infra.prep || 0; updateSurfaceDisplay('prep', d.infra.prep || 0);
-            }
-            if(d.veh) { 
-                document.getElementById('vType').value = d.veh.type; 
-                document.getElementById('fType').value = d.veh.fuel; 
-                document.getElementById('vCons').value = d.veh.cons; 
-                document.getElementById('fPrice').value = d.veh.price; 
-                document.getElementById('vAmort').value = d.veh.amort || 0.25;
-                document.getElementById('vFrigo').checked = d.veh.frigo || false;
-                document.getElementById('driverType').value = d.veh.driver; 
-                document.getElementById('cH').value = d.veh.cH; 
-                document.getElementById('tPrep').value = d.veh.tPrep; 
-                document.getElementById('tLoad').value = d.veh.tLoad; 
-            } }
-        }
-        function loadToursLibrary() { let s = localStorage.getItem('logistique_tours_v83_clean'); savedTours = s ? JSON.parse(s) : []; updateTourNameSuggestions(); renderToursList(); }
-
-        function renderToursList() {
-            const container = document.getElementById('tours-list-container');
-            const totalBox = document.getElementById('global-totals-container');
-            const stickyBar = document.getElementById('sticky-send-bar'); // NEW STICKY BAR
-
-            if(savedTours.length === 0) { 
-                container.innerHTML = '<div style="padding:20px; color:#999; font-style:italic; text-align:center;">Aucune tournée enregistrée pour l\'instant. Utilisez le formulaire ci-dessus.</div>'; 
-                totalBox.style.display = "none"; 
-                if(stickyBar) stickyBar.style.display = "none"; // Hide sticky bar if empty
-                return; 
-            }
+        function addStop() {
+            if(!sTemp.lat) return alert("Veuillez d'abord localiser l'adresse de l'arrêt.");
+            let cName = document.getElementById('sClient').value.trim() || "Arrêt " + (stops.length + 1);
             
-            // Show sticky bar if we have tours
-            if(stickyBar) stickyBar.style.display = "flex";
-
-            container.innerHTML = '';
-            let gCA = 0, gCost = 0, gDist = 0, gTime = 0;
-            savedTours.forEach(t => {
-                const div = document.createElement('div'); div.className = 'tour-row ' + (t.id === currentTourId ? 'active' : '');
-                let ca = t.stats ? t.stats.ca : 0; let cost = t.stats ? t.stats.cost : 0; let ratio = t.stats ? t.stats.ratio : 0; let dist = t.stats && t.stats.dist ? t.stats.dist.toFixed(1) : "0"; let time = t.stats && t.stats.time ? t.stats.time : 0; let stopCount = t.stops ? t.stops.length : 0; let preview = t.stops ? t.stops.map(s => s.client).slice(0, 6).join(', ') + (t.stops.length > 6 ? "..." : "") : "";
-                gCA += ca; gCost += cost; gDist += parseFloat(dist); gTime += time;
-                div.innerHTML = `<div onclick="loadTour('${t.id}')"><div class="t-id"><strong>${t.name}</strong></div><div class="t-day">${t.day}</div></div><div class="t-metrics" onclick="loadTour('${t.id}')"><span style="color:var(--success);">💰 ${Math.round(ca)}€</span><span style="color:var(--danger);">📉 ${Math.round(cost)}€</span><span style="color:var(--lib);">⚖️ ${ratio}%</span><span>🛣️ ${dist} km</span><span>⏱️ ${formatMinutes(time)}</span><span>🛑 ${stopCount} arrêts</span></div><div class="t-preview" onclick="loadTour('${t.id}')">${preview}</div><div class="t-actions"><button class="btn-mini" style="background:var(--lib); padding:4px 8px;" onclick="loadTour('${t.id}')">✏️</button><button class="btn-mini" style="background:var(--danger); padding:4px 8px;" onclick="deleteTour('${t.id}')">✕</button></div>`; container.appendChild(div);
+            stops.push({
+                id: Date.now(), client: cName, icon: document.getElementById('sOpType').value,
+                euro: parseFloat(document.getElementById('sEuro').value) || 0,
+                time: parseFloat(document.getElementById('sTime').value) || 15,
+                lat: sTemp.lat, lon: sTemp.lon, addr: document.getElementById('sAddr').value
             });
-            totalBox.style.display = "flex";
-            document.getElementById('gt-ca').innerText = Math.round(gCA) + " €"; 
-            document.getElementById('gt-cost').innerText = Math.round(gCost) + " €"; 
-            document.getElementById('gt-dist').innerText = Math.round(gDist) + " km"; 
-            document.getElementById('gt-time').innerText = formatMinutes(gTime);
             
-            let gRatio = gCA > 0 ? (gCost / gCA * 100).toFixed(1) : 0; 
-            let gtElem = document.getElementById('gt-ratio');
-            gtElem.innerText = gRatio + " %";
-            
-            if(gRatio < 10) gtElem.style.color = "#27ae60";
-            else if(gRatio < 30) gtElem.style.color = "#e67e22";
-            else gtElem.style.color = "#e74c3c";
-        }
-
-        function resetAll() {
-            if(!confirm("⚠️ ATTENTION : Vous allez effacer TOUTES les données (Paramètres du dépôt et Historique des tournées).\n\nVoulez-vous vraiment tout remettre à zéro ?")) return;
-            
-            // 1. Nettoyage LocalStorage
-            localStorage.removeItem('pnr_logistique_v83_clean');
-            localStorage.removeItem('logistique_tours_v83_clean');
-            
-            // 2. Reset Variables Globales
-            stops = [];
-            savedTours = [];
-            currentTourId = null;
-            pData = { lat:null, lon:null, addr:"" };
-            sTemp = { lat:null, lon:null };
-            currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0 };
-
-            // 3. Reset UI Dépôt (Champs texte)
-            document.getElementById('pName').value = "";
-            document.getElementById('pAddr').value = "";
-            document.getElementById('pMail').value = "";
-            
-            // Reset Métiers
-            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]');
-            checkboxes.forEach(cb => cb.checked = false);
-            updateJobSelection();
-
-            // Reset Infra Sliders
-            ['Sec', 'Frais', 'Neg', 'Prep'].forEach(type => {
-                const el = document.getElementById('surf' + type);
-                if(el) {
-                    el.value = 0;
-                    updateSurfaceDisplay(type.toLowerCase(), 0);
-                }
-            });
-
-            // Reset Véhicule & Coûts (Valeurs par défaut)
-            document.getElementById('vType').selectedIndex = 1; // Fourgon compact
-            document.getElementById('vFrigo').checked = false;
-            document.getElementById('fType').selectedIndex = 0; // Diesel
-            document.getElementById('vCons').value = "8.5";
-            document.getElementById('fPrice').value = "1.75";
-            document.getElementById('vAmort').value = "0.25";
-            
-            document.getElementById('driverType').selectedIndex = 0; // Producteur
-            document.getElementById('cH').value = "18";
-            document.getElementById('tPrep').value = "30";
-            document.getElementById('tLoad').value = "20";
-
-            // 4. Déverrouillage et validation
-            unlockDepot(); // Repasse en mode "prod"
-            checkProducerValidation(); // Met à jour l'état du bouton valider (sera disabled)
-            
-            // 5. Reset UI Tournée
-            // On appelle newTour(true) pour nettoyer la carte et les champs arrêts
-            newTour(true); 
-            
-            // 6. Reset Liste des tournées
-            renderToursList();
-            
-            // 7. Feedback
-            showToast("♻️ Réinitialisation complète effectuée !");
-            
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // --- BACKUP ---
-        function downloadBackup() { const data = { depot: localStorage.getItem('pnr_logistique_v83_clean'), tours: localStorage.getItem('logistique_tours_v83_clean') }; const blob = new Blob([JSON.stringify(data)], {type: "application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "backup_logistique_" + new Date().toISOString().slice(0,10) + ".json"; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-        function uploadBackup(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if(data.depot) localStorage.setItem('pnr_logistique_v83_clean', data.depot); if(data.tours) localStorage.setItem('logistique_tours_v83_clean', data.tours); alert("✅ Sauvegarde restaurée avec succès !"); location.reload(); } catch(err) { alert("❌ Erreur : Fichier invalide."); } }; reader.readAsText(file); }
-
-        function saveCurrentTour() {
-            // VERIF NOM TOURNEE (CRITIQUE V113)
-            const tName = document.getElementById('tName').value; 
-            if(!tName.trim()) {
-                 alert("⚠️ Attention : Veuillez donner un Nom à cette tournée (ex: 'Tournée écoles') avant de sauvegarder.");
-                 document.getElementById('tName').focus();
-                 return;
-            }
-            
-            try {
-                const tourData = { id: currentTourId || Date.now().toString(), name: tName, day: document.getElementById('tDay').value, stops: stops, stats: { ...currentStats } };
-                const idx = savedTours.findIndex(t => t.id === tourData.id); if(idx >= 0) savedTours[idx] = tourData; else savedTours.push(tourData);
-                currentTourId = tourData.id; 
-                localStorage.setItem('logistique_tours_v83_clean', JSON.stringify(savedTours)); 
-                
-                // NO updateView() here to prevent flicker/reset
-                updateTourNameSuggestions(); 
-                renderToursList();
-                
-                // FEEDBACK BOUTON
-                const btn = document.getElementById('btn-save-local');
-                const originalText = btn.innerText;
-                btn.innerText = "✅ SAUVEGARDÉ !";
-                btn.style.background = "#219150";
-                
-                // SHOW DECISION MODAL INSTEAD OF ALERT
-                document.getElementById('save-action-modal').style.display = 'flex';
-                
-                setTimeout(() => { 
-                    btn.innerText = originalText; 
-                    btn.style.background = "var(--success)";
-                    let rows = document.querySelectorAll('.tour-row'); if(rows.length > 0) { rows.forEach(r => { if(r.classList.contains('active')) r.classList.add('newly-saved'); }); } 
-                }, 2000);
-            } catch(e) {
-                alert("Erreur lors de la sauvegarde : " + e.message);
-            }
-        }
-
-        function closeSaveActionModal() {
-            document.getElementById('save-action-modal').style.display = 'none';
-        }
-
-        function triggerNewTourFromModal() {
-            closeSaveActionModal();
-            newTour(true); // skip confirmation
-        }
-
-        // NEW FUNCTION TO LINK MODAL TO SEND ACTION
-        function triggerSendFromModal() {
-            closeSaveActionModal();
-            openRgpdModal();
-        }
-
-        function loadTour(id) { const tour = savedTours.find(t => t.id === id); if(tour) { currentTourId = tour.id; document.getElementById('tName').value = tour.name; document.getElementById('tDay').value = tour.day; stops = tour.stops || []; updateView(); updateStatsTitle(); renderToursList(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
-        
-        function newTour(skipConfirm) { 
-            // 1. CONFIRMATION (Conditional)
-            if(!skipConfirm && stops.length > 0 && !confirm("Voulez-vous vider la carte pour créer une nouvelle tournée ?")) return; 
-            
-            // 2. RESET STATE
-            currentTourId = null; 
-            document.getElementById('tDay').value = "Lundi"; 
-            stops = []; 
-            sTemp = { lat: null, lon: null }; 
-            
-            // 3. RESET INPUTS (CLEANUP V127)
-            document.getElementById('sClient').value = "";
-            document.getElementById('sAddr').value = "";
-            document.getElementById('sEuro').value = "0";
-            document.getElementById('sTime').value = "15";
-            document.getElementById('sOpType').value = "📦";
-
-            // 4. RESET STATS
-            currentStats = { cost:0, ca:0, ratio:0, dist:0, time:0 }; 
-            
-            // 5. UPDATE UI
-            // Reset tName explicitly to force auto-name generation even if it was "TOURNEE - Lundi - 1"
-            document.getElementById('tName').value = ""; 
-            autoNameTour(); 
-            updateView(); 
-            updateStatsTitle(); 
-            renderToursList(); 
-            
-            // 6. FEEDBACK
-            showToast("✨ Nouvelle tournée créée !");
-        }
-
-        function deleteTour(id) { if(!confirm("Supprimer cette tournée ?")) return; savedTours = savedTours.filter(t => t.id !== id); localStorage.setItem('logistique_tours_v83_clean', JSON.stringify(savedTours)); if(currentTourId === id) newTour(); else renderToursList(); }
-        
-        function checkProducerValidation() { 
-            const pNameInput = document.getElementById('pName'); 
-            const btnValide = document.getElementById('btn-validate-depot');
-            let nameOk = pNameInput.value.trim().length > 0;
-            if(nameOk) pNameInput.classList.remove('input-error');
-            else pNameInput.classList.add('input-error');
-
-            let addrOk = pData.lat !== null;
-
-            if(nameOk && addrOk) { 
-                btnValide.classList.add('active'); 
-                btnValide.disabled = false; 
-            } else { 
-                btnValide.classList.remove('active'); 
-                btnValide.disabled = true; 
-            } 
-            saveDepot(); 
-        }
-        
-        function lockDepot() { 
-            const pNameInput = document.getElementById('pName');
-            if(pNameInput.value.trim().length === 0) { alert("Veuillez renseigner le Nom de la ferme."); pNameInput.focus(); return; }
-            document.getElementById('header-form').style.display = 'none'; 
-            document.getElementById('header-summary').style.display = 'flex'; 
-            const name = document.getElementById('pName').value; let rawAddr = document.getElementById('pAddr').value; let addrParts = rawAddr.split(',').map(s => s.trim()); let shortAddr = addrParts.slice(0, 3).join(', '); const tPrep = parseFloat(document.getElementById('tPrep').value) || 0; const tLoad = parseFloat(document.getElementById('tLoad').value) || 0; const totalTime = tPrep + tLoad; const veh = document.getElementById('vType').value; 
-            document.getElementById('summary-content').innerHTML = `<span>✅ <strong>${name}</strong></span><span class="sep">|</span><span>📍 ${shortAddr}</span><span class="sep">|</span><span>⏱️ ${totalTime} min</span><span class="sep">|</span><span>🚚 ${veh}</span>`; 
-            
-            // UNBLOCK AREA
-            const lockedSection = document.getElementById('locked-section');
-            lockedSection.classList.remove('blocked-area'); 
-            
-            setMode('stop'); 
-            setTimeout(function(){ map.invalidateSize(); }, 200); 
-            // FORCE RE-RENDER DEPOT ICON
+            sTemp = {lat:null, lon:null};
+            document.getElementById('sAddr').value = ""; document.getElementById('sClient').value = "";
+            document.getElementById('sEuro').value = "0"; document.getElementById('sTime').value = "15";
             updateView();
-        }
-
-        function unlockDepot() { 
-            document.getElementById('header-form').style.display = 'block'; 
-            document.getElementById('header-summary').style.display = 'none'; 
-            
-            const lockedSection = document.getElementById('locked-section');
-            lockedSection.classList.add('blocked-area'); 
-            
-            setMode('prod'); 
-        }
-
-        function setMode(m) { mode = m; document.getElementById('btn-t-prod').style.background = m==='prod' ? 'var(--accent)' : '#95a5a6'; document.getElementById('btn-t-stop').style.background = m==='stop' ? 'var(--accent)' : '#95a5a6'; }
-        function showTempMarker(lat, lon) { }
-        
-        // ADD STOP SECURISE (V113)
-        function addStop() { 
-            if(!sTemp.lat) return alert("Position manquante. Cliquez sur la carte ou utilisez l'adresse."); 
-            let cName = document.getElementById('sClient').value.trim(); 
-            if(!cName) cName = "Arrêt " + (stops.length + 1); 
-            
-            stops.push({ 
-                client:cName, 
-                icon:document.getElementById('sOpType').value, 
-                euro:parseFloat(document.getElementById('sEuro').value)||0, 
-                vol:0, // FORCE 0 (Suppression V107)
-                time:parseFloat(document.getElementById('sTime').value)||15, 
-                lat:sTemp.lat, 
-                lon:sTemp.lon, 
-                addr:document.getElementById('sAddr').value, 
-                id:Date.now() 
-            }); 
-            
-            sTemp={lat:null, lon:null}; 
-            document.getElementById('sAddr').value=""; 
-            document.getElementById('sClient').value=""; 
-            
-            updateView(); 
         }
 
         function editStop(index) { 
@@ -1224,114 +989,99 @@ Test<!DOCTYPE html>
             document.getElementById('sClient').focus(); 
         }
 
-        // UPDATE VIEW & ROUTE (V116 FIX)
-        function reorderStops() {
-            let ns=[]; 
-            document.querySelectorAll('.stop-item').forEach(it=>{ 
-                const id = it.getAttribute('data-id'); 
-                if(id) { 
-                    const found = stops.find(s=>s.id===parseInt(id)); 
-                    if(found) ns.push(found); 
-                } 
-            }); 
-            stops=ns; 
-            updateView(); 
+        function removeStop(index) { stops.splice(index, 1); updateView(); }
+
+        function initSortable() {
+            const el = document.getElementById('stops-list');
+            if(el) {
+                sortableInstance = Sortable.create(el, { 
+                    animation: 150, handle: '.handle', 
+                    onEnd: () => {
+                        let ns=[]; 
+                        document.querySelectorAll('.stop-item').forEach(it=>{ 
+                            const found = stops.find(s=>s.id === parseInt(it.getAttribute('data-id'))); 
+                            if(found) ns.push(found); 
+                        }); 
+                        stops=ns; updateView();
+                    }
+                });
+            }
         }
 
+        // --- AFFICHAGE & OSRM ---
         function updateView() {
-            markers.clearLayers(); routeLayer.clearLayers(); document.getElementById('stops-list').innerHTML="";
+            markers.clearLayers(); routeLayer.clearLayers(); 
+            const list = document.getElementById('stops-list'); list.innerHTML = "";
             
             if(pData.lat) {
-                L.marker([pData.lat, pData.lon], {
-                    icon: L.divIcon({html:'🏠', className:'map-num-icon', iconSize:[30,30], iconAnchor:[15,15]})
-                }).addTo(markers);
+                // MISE À JOUR DE L'ICÔNE SUR LA CARTE
+                const depotSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>`;
+                const depotIcon = L.divIcon({html:`<div style="background:#405F59; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">${depotSVG}</div>`, className:'', iconSize:[30,30], iconAnchor:[15,15]});
+                L.marker([pData.lat, pData.lon], {icon: depotIcon}).addTo(markers);
             }
             
             stops.forEach((s, i) => { 
-                let rawAddr = s.addr.split(',').map(p => p.trim()); let shortAddr = rawAddr.slice(0, 3).join(', '); let zipMatch = s.addr.match(/\b\d{5}\b/); if(zipMatch) shortAddr += " (" + zipMatch[0] + ")";
-                document.getElementById('stops-list').innerHTML += `<li class="stop-item" data-id="${s.id}"><div class="stop-content"><span class="handle">☰</span>${s.icon} <div class="stop-info"><span class="stop-name">${i+1}. ${s.client}</span><span class="stop-addr">${shortAddr}</span></div></div><div class="stop-meta"><span class="stop-euro">${s.euro} €</span><span class="stop-dist-tag" id="dist-stop-${i}">... km</span><div class="ratio-tag" id="ratio-stop-${i}">...</div></div><div class="stop-actions"><button class="btn-icon" onclick="editStop(${i})" title="Modifier">✏️</button><button class="btn-icon" onclick="stops.splice(${i},1);updateView()" title="Supprimer" style="color:#e74c3c;">✕</button></div></li>`;
-                
-                const numIcon = L.divIcon({ className: 'map-num-icon', html: i + 1, iconSize: [24, 24], iconAnchor: [12, 12] });
+                list.innerHTML += `
+                    <li class="stop-item bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center" data-id="${s.id}">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <span class="handle">☰</span><span class="text-xl">${s.icon}</span>
+                            <div class="flex flex-col overflow-hidden">
+                                <span class="font-bold text-dix-dark truncate">${i+1}. ${s.client}</span>
+                                <span class="text-xs text-gray-500 truncate">${s.addr.split(',')[0]}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end min-w-[90px]">
+                            <span class="font-bold text-dix-light">${s.euro} €</span>
+                            <span class="text-xs text-gray-400" id="dist-stop-${i}">... km</span>
+                            <div class="ratio-tag bg-gray-100 text-gray-500" id="ratio-stop-${i}">...</div>
+                        </div>
+                        <div class="flex gap-1 ml-2">
+                            <button onclick="editStop(${i})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1.5 rounded-lg" title="Modifier">✏️</button>
+                            <button onclick="removeStop(${i})" class="text-red-500 hover:text-red-700 font-bold bg-red-50 p-1.5 rounded-lg" title="Supprimer">✕</button>
+                        </div>
+                    </li>`;
+                const numIcon = L.divIcon({html:`<div style="background:#549e39; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.3); font-weight:bold; font-family:Oswald; font-size:12px;">${i+1}</div>`, className:'', iconSize:[24,24], iconAnchor:[12,12]});
                 L.marker([s.lat, s.lon], {icon: numIcon}).addTo(markers);
             });
 
-            // RE-INIT SORTABLE (V116 FIX)
-            // Note: Sortable is already initialized on load, just need to ensure the list is refreshed for it
-            // No need to destroy/recreate constantly if ID is stable, but for safety:
-             const listEl = document.getElementById('stops-list');
-            /*
-            if(listEl && sortableInstance) {
-               // sortableInstance state remains valid as long as DOM element exists
-            }
-            */
-
             if(pData.lat && stops.length > 0) {
-                let rRaw = pData.addr.split(',').map(p => p.trim()); let rShort = rRaw.slice(0, 3).join(', '); let rZip = pData.addr.match(/\b\d{5}\b/); if(rZip) rShort += " (" + rZip[0] + ")";
-                document.getElementById('stops-list').innerHTML += `<li class="stop-item return-item"><div class="stop-content"><span style="font-size:1.2rem; margin-right:10px;">🏁</span><div class="stop-info"><span class="stop-name">Retour au point de départ</span><span class="stop-addr">${rShort}</span></div></div><div class="stop-meta"><span class="stop-euro" style="color:#7f8c8d;" id="return-cost">0 €</span><span class="stop-dist-tag" id="dist-return">... km</span></div><div class="stop-actions" style="width:60px;"></div></li>`;
+                let rShort = pData.addr.split(',').slice(0, 3).join(', ');
+                list.innerHTML += `
+                    <li class="bg-gray-50 p-3 rounded-xl border-l-4 border-dix-dark flex justify-between items-center mt-2">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-6 h-6 text-dix-dark opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-dix-dark">Retour au point de départ</span>
+                                <span class="text-xs text-gray-500">${rShort}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end min-w-[80px] mr-[88px]">
+                            <span id="return-cost" class="font-bold text-gray-500">0 €</span>
+                            <span id="dist-return" class="text-xs text-gray-400">... km</span>
+                        </div>
+                    </li>`;
                 calcRoute();
-            } else updateStats(0,0); updateStatsTitle();
+            } else { 
+                currentDist = 0; currentDriveTime = 0;
+                updateStats(0, 0); 
+            }
         }
-        
-        function updateStatsTitle() { const tourName = document.getElementById('tName').value.trim(); const titleElem = document.getElementById('kpi-tour-title'); if(tourName) titleElem.innerText = "RÉCAPITULATIF GLOBAL : " + tourName.toUpperCase(); else titleElem.innerText = "RÉCAPITULATIF GLOBAL"; }
 
-        // ROUTE CALCULATION (V113 FIX LOOP)
         function calcRoute() {
-            // FIX V128: Utilisation de OSRM DE (Allemagne) pour une meilleure performance en Europe et éviter le fallback "vol d'oiseau"
-            // Troncature des coordonnées pour éviter les URLs trop longues et les erreurs de parsing
             const fmt = (n) => parseFloat(n).toFixed(6);
-
-            let pts = [
-                [fmt(pData.lon), fmt(pData.lat)], 
-                ...stops.map(s => [fmt(s.lon), fmt(s.lat)]), 
-                [fmt(pData.lon), fmt(pData.lat)]
-            ];
+            let pts = [[fmt(pData.lon), fmt(pData.lat)], ...stops.map(s => [fmt(s.lon), fmt(s.lat)]), [fmt(pData.lon), fmt(pData.lat)]];
             
-            const fallbackRoute = () => {
-                console.log("Mode Vol d'oiseau activé");
-                let totalDist = 0;
-                let polylinePts = [];
-                const cH = parseFloat(document.getElementById('cH').value) || 0; 
-                const conso = parseFloat(document.getElementById('vCons').value) || 0; 
-                const fuelPrice = parseFloat(document.getElementById('fPrice').value) || 0;
-                const prixAmort = parseFloat(document.getElementById('vAmort').value) || 0;
-
-                // On reconstruit pts pour le calcul local car pts est maintenant un tableau de strings
-                let localPts = [[pData.lon, pData.lat], ...stops.map(s=>[s.lon, s.lat]), [pData.lon, pData.lat]];
-
-                for(let i=0; i<localPts.length-1; i++) {
-                    const from = L.latLng(localPts[i][1], localPts[i][0]);
-                    const to = L.latLng(localPts[i+1][1], localPts[i+1][0]);
-                    const legDist = (from.distanceTo(to) / 1000) * 1.2; // Majoration 20%
-                    totalDist += legDist;
-                    polylinePts.push([localPts[i][1], localPts[i][0]]);
-
-                    // UPDATE STOP UI (FALLBACK LOOP)
-                    if(i < stops.length) {
-                        let s = stops[i];
-                        let legDur = (legDist / 50) * 60; // Est. 50km/h
-                        updateStopUI(i, s, legDist, legDur, cH, conso, fuelPrice, prixAmort);
-                    }
-                }
-                polylinePts.push([localPts[localPts.length-1][1], localPts[localPts.length-1][0]]);
-                
-                L.polyline(polylinePts, {color:'var(--info)', weight:5, dashArray: '10, 10'}).addTo(routeLayer);
-                map.fitBounds(L.featureGroup(markers.getLayers()).getBounds().pad(0.2));
-                
-                updateStats(totalDist, (totalDist / 50) * 60); 
-            };
-
-            // URL OSRM DE (Allemagne) - Plus rapide pour l'Europe
             fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${pts.map(p=>p.join(',')).join(';')}?overview=full&geometries=geojson`)
-            .then(r => r.json())
-            .then(res => {
+            .then(r => r.json()).then(res => {
                 if(res.code === 'Ok'){
                     let rd = res.routes[0]; 
-                    lastRouteData = rd; 
-                    L.polyline(rd.geometry.coordinates.map(c=>[c[1], c[0]]), {color:'var(--info)', weight:5}).addTo(routeLayer); 
+                    L.polyline(rd.geometry.coordinates.map(c=>[c[1], c[0]]), {color:'#549e39', weight:5, opacity:0.8}).addTo(routeLayer); 
                     map.fitBounds(L.featureGroup(markers.getLayers()).getBounds().pad(0.2)); 
-                    updateStats(rd.distance/1000, rd.duration/60);
+                    
+                    currentDriveTime = rd.duration / 60; 
+                    currentDist = rd.distance / 1000;
+                    updateStats(currentDist, currentDriveTime);
 
-                    // UPDATE STOP UI (REAL ROUTE LOOP)
                     const cH = parseFloat(document.getElementById('cH').value) || 0; 
                     const conso = parseFloat(document.getElementById('vCons').value) || 0; 
                     const fuelPrice = parseFloat(document.getElementById('fPrice').value) || 0;
@@ -1339,138 +1089,342 @@ Test<!DOCTYPE html>
 
                     if(rd.legs && rd.legs.length > 0) { 
                         stops.forEach((s, i) => { 
-                            let legDist = rd.legs[i].distance / 1000; 
-                            let legDur = rd.legs[i].duration / 60; 
-                            updateStopUI(i, s, legDist, legDur, cH, conso, fuelPrice, prixAmort);
+                            let legDist = rd.legs[i].distance / 1000; let legDur = rd.legs[i].duration / 60; 
+                            const legCost = ((legDist/100)*conso*fuelPrice) + (legDist*prixAmort) + (((legDur+s.time)/60)*cH);
+                            
+                            let elDist = document.getElementById(`dist-stop-${i}`); 
+                            if(elDist) elDist.innerText = legDist.toFixed(1) + " km";
+
+                            let elRatio = document.getElementById(`ratio-stop-${i}`);
+                            if(elRatio) {
+                                if(s.euro > 0) {
+                                    let ratio = (legCost / s.euro) * 100;
+                                    elRatio.innerText = "Ratio " + ratio.toFixed(0) + "%";
+                                    elRatio.className = "ratio-tag " + (ratio < 10 ? "ratio-good" : (ratio < 30 ? "ratio-mid" : "ratio-bad"));
+                                } else { elRatio.innerText = "N/A"; elRatio.className = "ratio-tag bg-gray-200 text-gray-600"; }
+                            }
                         }); 
-                        // Return leg
+                        
                         let returnLegIndex = stops.length; 
                         if(rd.legs[returnLegIndex]) { 
                             let retDist = rd.legs[returnLegIndex].distance / 1000;
                             let elRetDist = document.getElementById('dist-return'); 
                             if(elRetDist) elRetDist.innerText = retDist.toFixed(1) + " km";
-                            // Recalcul simple coût retour
-                             const retCost = ((retDist/100)*conso*fuelPrice) + (retDist*prixAmort) + ((rd.legs[returnLegIndex].duration/60/60)*cH);
-                             let elRetCost = document.getElementById('return-cost'); 
-                             if(elRetCost) elRetCost.innerText = "-" + retCost.toFixed(2) + " €";
+                            
+                            const retCost = ((retDist/100)*conso*fuelPrice) + (retDist*prixAmort) + ((rd.legs[returnLegIndex].duration/3600)*cH);
+                            let elRetCost = document.getElementById('return-cost'); 
+                            if(elRetCost) elRetCost.innerText = "-" + retCost.toFixed(2) + " €";
                         }
                     }
-                } else {
-                    fallbackRoute();
                 }
-            })
-            .catch(e => {
-                console.error("Erreur OSRM", e);
-                fallbackRoute();
-            });
-        }
-
-        // SHARED FUNCTION FOR STOP UI UPDATE
-        function updateStopUI(i, s, legDist, legDur, cH, conso, fuelPrice, prixAmort) {
-            const costFuel = (legDist / 100) * conso * fuelPrice; 
-            const costAmort = legDist * prixAmort;
-            const costTime = ((legDur + s.time) / 60) * cH; 
-            const totalLegCost = costFuel + costAmort + costTime; 
-            
-            let ratio = 0; 
-            let ratioText = "N/A"; 
-            let ratioClass = "ratio-bad"; 
-            
-            if(s.euro > 0) { 
-                ratio = (totalLegCost / s.euro) * 100; 
-                ratioText = "Ratio Logistique " + ratio.toFixed(0) + " %"; 
-                if(ratio < 10) ratioClass = "ratio-good"; 
-                else if(ratio < 30) ratioClass = "ratio-mid"; 
-            } else { 
-                ratioText = "Ratio Logistique ∞"; 
-            } 
-            
-            let elDist = document.getElementById(`dist-stop-${i}`); 
-            if(elDist) elDist.innerText = legDist.toFixed(1) + " km"; 
-            
-            let elRatio = document.getElementById(`ratio-stop-${i}`); 
-            if(elRatio) { 
-                elRatio.innerText = ratioText; 
-                elRatio.className = "ratio-tag " + ratioClass; 
-            }
+            }).catch(e => console.error("Erreur OSRM", e));
         }
 
         function updateStats(dist, driveTime) {
-            const cH = parseFloat(document.getElementById('cH').value) || 0; const conso = parseFloat(document.getElementById('vCons').value) || 0; const prixCarb = parseFloat(document.getElementById('fPrice').value) || 0; 
+            const cH = parseFloat(document.getElementById('cH').value) || 0; 
+            const conso = parseFloat(document.getElementById('vCons').value) || 0; 
+            const prixCarb = parseFloat(document.getElementById('fPrice').value) || 0; 
             const prixAmort = parseFloat(document.getElementById('vAmort').value) || 0; 
-            const prep = parseFloat(document.getElementById('tPrep').value) || 0; const load = parseFloat(document.getElementById('tLoad').value) || 0;
+            const prep = parseFloat(document.getElementById('tPrep').value) || 0; 
+            const load = parseFloat(document.getElementById('tLoad').value) || 0;
             
-            const sTime = stops.reduce((a,b)=>a+b.time, 0) + prep + load + driveTime; 
+            const stopsTime = stops.reduce((a,b)=>a+b.time, 0);
+            const manuTime = prep + load + stopsTime;
+            const sTime = manuTime + driveTime; 
+            
             const fuelCost = (dist / 100) * conso * prixCarb; 
             const amortCost = dist * prixAmort; 
             const laborCost = (sTime / 60) * cH; 
-            
             const totalCost = fuelCost + amortCost + laborCost; 
             const ca = stops.reduce((a,b)=>a+b.euro, 0);
-            currentStats = { cost: totalCost, ca: ca, ratio: ca > 0 ? (totalCost/ca*100).toFixed(1) : 0, dist: dist, time: sTime };
             
-            document.getElementById('rDist').innerText=dist.toFixed(1)+" km"; 
-            document.getElementById('rTime').innerText=Math.floor(driveTime/60)+"h"+Math.round(driveTime%60).toString().padStart(2,'0'); 
-            document.getElementById('rOps').innerText=Math.floor(sTime/60)+"h"+Math.round(sTime%60).toString().padStart(2,'0'); 
+            currentStats = { 
+                cost: totalCost, 
+                ca: ca, 
+                ratio: ca > 0 ? (totalCost/ca*100).toFixed(1) : 0, 
+                dist: dist, 
+                time: sTime, 
+                driveTime: driveTime,
+                costTrans: fuelCost + amortCost,
+                costRH: laborCost
+            };
             
-            document.getElementById('rCostTrans').innerText=(fuelCost + amortCost).toFixed(2)+" €"; 
+            document.getElementById('rDist').innerText = dist.toFixed(1) + " km"; 
             
-            document.getElementById('rCostOps').innerText=laborCost.toFixed(2)+" €"; 
-            document.getElementById('rTotal').innerText=totalCost.toFixed(2)+" €"; 
-            document.getElementById('rVal').innerText=ca.toFixed(2)+" €"; 
+            // --- MAJ DU NOUVEAU BLOC TEMPS ---
+            const formatTime = (m) => Math.floor(m/60) + "h" + Math.round(m%60).toString().padStart(2,'0');
+            const elTotalTime = document.getElementById('rTotalTime');
+            if(elTotalTime) {
+                elTotalTime.innerText = formatTime(sTime);
+                document.getElementById('val-route').innerText = formatTime(driveTime);
+                document.getElementById('val-manu').innerText = formatTime(manuTime);
+                
+                let routePct = sTime > 0 ? (driveTime / sTime) * 100 : 0;
+                let manuPct = sTime > 0 ? (manuTime / sTime) * 100 : 0;
+                
+                document.getElementById('bar-route').style.width = routePct + '%';
+                document.getElementById('bar-manu').style.width = manuPct + '%';
+            }
+            // ----------------------------------
             
-            let ratioElem = document.getElementById('rRatio');
-            ratioElem.innerText=currentStats.ratio+" %";
-            if(currentStats.ratio < 10) ratioElem.style.color = "#27ae60";
-            else if(currentStats.ratio < 30) ratioElem.style.color = "#e67e22";
-            else ratioElem.style.color = "#e74c3c";
+            document.getElementById('rCostTrans').innerText = (fuelCost + amortCost).toFixed(2) + " €"; 
+            document.getElementById('rCostOps').innerText = laborCost.toFixed(2) + " €"; 
+            
+            document.getElementById('rTotal').innerText = totalCost.toFixed(2) + " €"; 
+            document.getElementById('rVal').innerText = ca.toFixed(2) + " €"; 
+            
+            const rElem = document.getElementById('rRatio');
+            rElem.innerText = currentStats.ratio + " %";
+            rElem.className = "block font-bold text-2xl " + (currentStats.ratio < 10 ? "text-green-400" : (currentStats.ratio < 30 ? "text-yellow-400" : "text-red-400"));
         }
 
-        // --- ENVOI CENTRALISÉ ---
-        async function sendProjectData() {
-            if(savedTours.length === 0) { alert("Aucune tournée enregistrée à envoyer."); return; }
-            const btn = document.getElementById('btn-export-project'); 
-            btn.disabled = true; btn.innerText = "⏳ Envoi en cours...";
-            
-            // Aussi désactiver le bouton sticky s'il existe
-            const stickyBtn = document.querySelector('.btn-sticky-send');
-            if(stickyBtn) { stickyBtn.disabled = true; stickyBtn.innerText = "⏳..."; }
-
-            const fullData = { meta: { date: new Date().toISOString(), version: "V113_CATL_Calculs" }, depot: JSON.parse(localStorage.getItem('pnr_logistique_v83_clean')), tours: savedTours };
-            const nomProd = document.getElementById('pName').value || "Producteur Inconnu";
-            
-            try { 
-                const { data, error } = await supabaseClient.from('tournees_test').insert([ { nom_producteur: nomProd, data_json: fullData } ]); 
-                if (error) throw error; 
-                
-                // Cacher la barre sticky en cas de succès
-                document.getElementById('sticky-send-bar').style.display = 'none';
-
-                document.getElementById('success-modal').style.display = 'flex';
-                console.log("Envoyé:", data); 
-            } catch (err) { 
-                console.error("Erreur Supabase:", err); 
-                alert("❌ Erreur technique : " + err.message); 
-                
-                if(stickyBtn) { stickyBtn.disabled = false; stickyBtn.innerText = "CLIQUEZ ICI POUR ENVOYER A LA CATL"; }
-
-            } finally { 
-                btn.disabled = false; btn.innerText = "🚀 ENVOYER LE PROJET A LA CATL"; 
+        // --- GESTION DES RECALCULS GLOBAUX ---
+        function handleParamsChange() {
+            updateStats(currentDist, currentDriveTime); 
+            if (savedTours.length > 0) recalcSavedTours();
+            if (pData.lat && stops.length > 0) {
+                clearTimeout(calcTimeout);
+                calcTimeout = setTimeout(calcRoute, 400); 
             }
         }
 
-        function openRgpdModal() {
-            if(savedTours.length === 0) { alert("Aucune tournée enregistrée à envoyer."); return; }
-            document.getElementById('rgpd-modal').style.display = 'flex';
-        }
-        function closeRgpdModal() { document.getElementById('rgpd-modal').style.display = 'none'; }
-        function confirmAndSend() { closeRgpdModal(); sendProjectData(); }
-        function closeSuccessModal() { document.getElementById('success-modal').style.display = 'none'; }
-        function openFormulaire() {
-            window.open("https://docs.google.com/forms/d/e/1FAIpQLSdMt4LcBNYnBd1jvHNXizbh2sUgbN_7ZYpkvKMkRwJysvaQIw/viewform?usp=header", "_blank");
-            closeSuccessModal();
+        function recalcSavedTours() {
+            const cH = parseFloat(document.getElementById('cH').value) || 0; 
+            const conso = parseFloat(document.getElementById('vCons').value) || 0; 
+            const prixCarb = parseFloat(document.getElementById('fPrice').value) || 0; 
+            const prixAmort = parseFloat(document.getElementById('vAmort').value) || 0; 
+            const prep = parseFloat(document.getElementById('tPrep').value) || 0; 
+            const load = parseFloat(document.getElementById('tLoad').value) || 0;
+
+            savedTours.forEach(t => {
+                let driveTime = t.stats.driveTime || 0;
+                let sTime = t.stops.reduce((a,b)=>a+b.time, 0) + prep + load + driveTime;
+                let fuelCost = (t.stats.dist / 100) * conso * prixCarb;
+                let amortCost = t.stats.dist * prixAmort;
+                let laborCost = (sTime / 60) * cH;
+                let totalCost = fuelCost + amortCost + laborCost;
+                
+                t.stats.cost = totalCost;
+                t.stats.time = sTime;
+                t.stats.ratio = t.stats.ca > 0 ? (totalCost/t.stats.ca*100).toFixed(1) : 0;
+                t.stats.costTrans = fuelCost + amortCost;
+                t.stats.costRH = laborCost;
+            });
+            renderSavedTours();
         }
 
+        // --- GESTION MULTI-TOURNÉES ET ENVOI ---
+        function saveCurrentTour() {
+            if(stops.length === 0) return alert("Ajoutez au moins un arrêt avant de sauvegarder la tournée.");
+            
+            savedTours.push({
+                id: Date.now(),
+                name: document.getElementById('tName').value || "Tournée sans nom",
+                day: document.getElementById('tDay').value,
+                stops: [...stops],
+                stats: {...currentStats}
+            });
+            
+            updateTourNameSuggestions();
+            renderSavedTours();
+            
+            document.getElementById('save-options-modal').classList.remove('hidden');
+        }
+
+        function handleSaveOption(choice) {
+            document.getElementById('save-options-modal').classList.add('hidden');
+            
+            if (choice === 'new') {
+                newTour(true);
+                document.getElementById('tour-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else if (choice === 'variant') {
+                let currentName = document.getElementById('tName').value;
+                if(!currentName.includes("(Variante)")) {
+                    document.getElementById('tName').value = currentName + " (Variante)";
+                }
+            } else if (choice === 'finish') {
+                newTour(true);
+                document.getElementById('global-kpis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function removeSavedTour(id) {
+            savedTours = savedTours.filter(t => t.id !== id);
+            renderSavedTours();
+        }
+
+        function editSavedTour(id) {
+            if (stops.length > 0) {
+                if (!confirm("Une tournée est en cours d'édition sur la carte. Voulez-vous l'écraser pour modifier celle-ci ? (Pensez à sauvegarder la tournée en cours si besoin)")) {
+                    return;
+                }
+            }
+
+            const tourIndex = savedTours.findIndex(t => t.id === id);
+            if (tourIndex === -1) return;
+            const tour = savedTours[tourIndex];
+
+            document.getElementById('tName').value = tour.name;
+            document.getElementById('tDay').value = tour.day;
+            stops = [...tour.stops];
+            
+            sTemp = { lat: null, lon: null };
+            document.getElementById('sClient').value = "";
+            document.getElementById('sAddr').value = "";
+            document.getElementById('sEuro').value = "0";
+            document.getElementById('sTime').value = "15";
+
+            savedTours.splice(tourIndex, 1);
+            
+            renderSavedTours();
+            updateTourNameSuggestions();
+            updateView();
+            
+            document.getElementById('tour-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderSavedTours() {
+            const list = document.getElementById('saved-tours-list');
+            const msg = document.getElementById('no-tours-msg');
+            const kpiBox = document.getElementById('global-kpis');
+            const btnSend = document.getElementById('btn-send-supabase');
+            const stickyBanner = document.getElementById('sticky-send-banner');
+            
+            list.innerHTML = "";
+            let gCost = 0, gCa = 0, gDist = 0, gTime = 0, gCostTrans = 0, gCostRH = 0;
+
+            if(savedTours.length === 0) {
+                msg.classList.remove('hidden'); kpiBox.classList.add('hidden'); btnSend.classList.add('hidden');
+                btnSend.classList.remove('flex');
+                
+                stickyBanner.classList.add('translate-y-full');
+                setTimeout(() => stickyBanner.classList.add('hidden'), 500);
+            } else {
+                msg.classList.add('hidden'); kpiBox.classList.remove('hidden'); btnSend.classList.remove('hidden');
+                btnSend.classList.add('flex');
+                
+                stickyBanner.classList.remove('hidden');
+                setTimeout(() => stickyBanner.classList.remove('translate-y-full'), 10);
+                
+                savedTours.forEach(t => {
+                    gCost += t.stats.cost; 
+                    gCa += t.stats.ca;
+                    gDist += t.stats.dist || 0;
+                    gTime += t.stats.time || 0;
+                    gCostTrans += t.stats.costTrans || 0;
+                    gCostRH += t.stats.costRH || 0;
+                    
+                    let rVal = parseFloat(t.stats.ratio);
+                    let rClass = rVal === 0 ? "bg-gray-200 text-gray-600 border border-gray-300" : (rVal < 10 ? "ratio-good" : (rVal < 30 ? "ratio-mid" : "ratio-bad"));
+
+                    list.innerHTML += `
+                        <li class="bg-white p-3 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
+                            <div>
+                                <span class="font-bold text-dix-dark">${t.name}</span> <span class="text-xs text-gray-500">(${t.day})</span><br>
+                                <span class="text-xs text-gray-400">${t.stops.length} arrêt(s) - ${t.stats.dist.toFixed(1)} km</span>
+                                <div class="mt-1"><span class="ratio-tag ${rClass} text-[10px] inline-block">Ratio ${t.stats.ratio}%</span></div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-right flex flex-col items-end">
+                                    <span class="block text-[11px] font-bold text-dix-light">Valeur : ${t.stats.ca.toFixed(2)}€</span>
+                                    <span class="block text-[11px] font-bold text-red-400">Coût : ${t.stats.cost.toFixed(2)}€</span>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="editSavedTour(${t.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg" title="Modifier cette tournée">✏️</button>
+                                    <button onclick="removeSavedTour(${t.id})" class="text-red-500 hover:text-red-700 font-bold bg-red-50 p-2 rounded-lg" title="Supprimer">✕</button>
+                                </div>
+                            </div>
+                        </li>`;
+                });
+
+                document.getElementById('gCost').innerText = gCost.toFixed(2) + " €";
+                document.getElementById('gVal').innerText = gCa.toFixed(2) + " €";
+                let gRatio = gCa > 0 ? (gCost/gCa*100).toFixed(1) : 0;
+                document.getElementById('gRatio').innerText = gRatio + " %";
+                
+                document.getElementById('gDist').innerText = gDist.toFixed(1) + " km";
+                const formatTime = (m) => Math.floor(m/60) + "h" + Math.round(m%60).toString().padStart(2,'0');
+                document.getElementById('gTime').innerText = formatTime(gTime);
+
+                document.getElementById('gCostTrans').innerText = gCostTrans.toFixed(2) + " €";
+                document.getElementById('gCostRH').innerText = gCostRH.toFixed(2) + " €";
+
+                let pctTrans = gCost > 0 ? Math.round((gCostTrans / gCost) * 100) : 0;
+                let pctRH = gCost > 0 ? Math.round((gCostRH / gCost) * 100) : 0;
+
+                document.getElementById('gBarTrans').style.width = pctTrans + '%';
+                document.getElementById('gBarRH').style.width = pctRH + '%';
+                document.getElementById('gPctTrans').innerText = pctTrans;
+                document.getElementById('gPctRH').innerText = pctRH;
+            }
+        }
+
+        async function sendProjectData() {
+            if(savedTours.length === 0) return alert("Sauvegardez au moins une tournée avant d'envoyer le dossier.");
+            
+            const btn = document.getElementById('btn-send-supabase');
+            const span = btn.querySelector('span');
+            const originalText = span.innerText;
+            
+            const stickyBtn = document.getElementById('btn-sticky-send');
+            const stickySpan = stickyBtn ? stickyBtn.querySelector('span') : null;
+            const originalStickyText = stickySpan ? stickySpan.innerText : '';
+
+            span.innerText = "⏳ ENVOI EN COURS...";
+            btn.classList.add('opacity-50', 'pointer-events-none');
+            
+            if(stickyBtn) {
+                if(stickySpan) stickySpan.innerText = "⏳ ENVOI...";
+                stickyBtn.classList.add('opacity-50', 'pointer-events-none');
+            }
+            
+            const checkboxes = document.querySelectorAll('#pJobMenu input[type="checkbox"]:checked');
+            const selectedJobs = Array.from(checkboxes).map(cb => cb.value);
+
+            const fullData = { 
+                meta: { date: new Date().toISOString(), version: "Demo_DIX" }, 
+                depot: {
+                    ...pData,
+                    metier: selectedJobs,
+                    vehicule: document.getElementById('vType').value,
+                    energie: document.getElementById('fType').value,
+                    conso: document.getElementById('vCons').value,
+                    driver: document.getElementById('driverType').value,
+                    cout_h: document.getElementById('cH').value,
+                    stock_prep: document.getElementById('surfPrep').value,
+                    stock_sec: document.getElementById('surfSec').value,
+                    stock_frais: document.getElementById('surfFrais').value,
+                    stock_neg: document.getElementById('surfNeg').value
+                }, 
+                tours: savedTours 
+            };
+            
+            try { 
+                const { error } = await supabaseClient.from('tournees_test').insert([ 
+                    { nom_producteur: document.getElementById('user-display').innerText, data_json: fullData } 
+                ]); 
+                if (error) throw error; 
+                
+                document.getElementById('success-message-text').innerText = "Vos données de simulation ont bien été enregistrées dans l'espace de démonstration sécurisé (Table: tournees_test).";
+                document.getElementById('success-modal').classList.remove('hidden');
+            } catch (err) { 
+                console.error("Erreur Supabase:", err); 
+                if (err.code === '42501') {
+                    document.getElementById('success-message-text').innerText = "Mode Démo : Simulation terminée avec succès ! (Note : L'envoi distant est bloqué par la sécurité de la base de données, dossier généré localement).";
+                    document.getElementById('success-modal').classList.remove('hidden');
+                } else {
+                    alert("❌ Erreur technique lors de l'envoi."); 
+                }
+            } finally { 
+                span.innerText = originalText; 
+                btn.classList.remove('opacity-50', 'pointer-events-none');
+                
+                if(stickyBtn) {
+                    if(stickySpan) stickySpan.innerText = originalStickyText;
+                    stickyBtn.classList.remove('opacity-50', 'pointer-events-none');
+                }
+            }
+        }
     </script>
 </body>
 </html>
