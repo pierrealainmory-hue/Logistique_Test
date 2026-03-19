@@ -369,7 +369,8 @@
                     
                     <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
                         <h2 class="text-lg text-dix-light font-oswald flex items-center">
-                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6.5W4a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg>
+                            <!-- ICÔNE (Camion) -->
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg>
                             2. CRÉATION DE LA TOURNÉE
                         </h2>
                         <button onclick="newTour(false)" class="text-xs bg-white border border-dix-light text-dix-light font-oswald px-3 py-1 rounded-full hover:bg-dix-light hover:text-white transition-colors flex items-center gap-1">
@@ -442,7 +443,7 @@
 
                     <h4 class="font-oswald text-dix-light mb-2 text-sm border-b border-gray-100 pb-1 flex items-center">
                         <svg class="w-4 h-4 mr-2 text-dix-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                        📋 ORDRE DE PASSAGE (DRAG & DROP)
+                        ORDRE DE PASSAGE (DRAG & DROP)
                     </h4>
                     <ul id="stops-list" class="min-h-[50px] space-y-2 mb-4"></ul>
 
@@ -522,7 +523,10 @@
                     <div class="flex justify-between mt-2 text-[10px] sm:text-xs font-georgia text-gray-500">
                         <div class="flex items-center gap-1">
                             <span class="w-3 h-3 rounded-full bg-dix-light inline-block"></span> 
-                            <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6.5W4a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg> Route : <span id="val-route" class="font-bold text-gray-700 ml-1">0h00</span></span>
+                            <span class="flex items-center">
+                                <!-- ICÔNE (Camion / Route) -->
+                                <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg> Route : <span id="val-route" class="font-bold text-gray-700 ml-1">0h00</span>
+                            </span>
                         </div>
                         <div class="flex items-center gap-1">
                             <span class="w-3 h-3 rounded-full bg-dix-dark inline-block"></span> 
