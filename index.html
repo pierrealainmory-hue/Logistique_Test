@@ -100,7 +100,13 @@
                 <span>ACCÉDER À L'OUTIL</span>
             </button>
         </div>
-        <div class="mt-6 text-center text-xs text-gray-400 font-georgia">Réservé aux entrepreneur·euses et partenaires.</div>
+        <div class="mt-6 text-center text-xs text-gray-400 font-georgia">
+            Réservé aux entrepreneur·euses et partenaires.<br><br>
+            <span class="opacity-70 flex items-center justify-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                À des fins de sécurité, votre adresse IP est enregistrée lors de la connexion.
+            </span>
+        </div>
     </div>
 
     <!-- ========================================== -->
@@ -635,7 +641,7 @@
             <div class="flex flex-wrap justify-center items-center gap-3 sm:gap-5 text-sm text-gray-600 font-georgia">
                 <span>Outil conçu et réalisé par</span>
                 <a href="http://www.dix-autrement.fr" target="_blank" class="hover:opacity-80 transition-opacity">
-                    <img src="https://raw.githubusercontent.com/pierrealainmory-hue/logistique-data-projet/main/logo%20dix%20solutions.jpg" alt="Logo DIX Solutions" class="h-8 w-auto rounded object-contain" onerror="this.src='https://placehold.co/100x30/405F59/FFFFFF?text=DIX+Solutions&font=Oswald'">
+                    <img src="https://raw.githubusercontent.com/pierrealainmory-hue/Logistique_Test/main/logo%20dix%20solutions.jpg" alt="Logo DIX Solutions" class="h-8 w-auto rounded object-contain" onerror="this.src='https://placehold.co/100x30/405F59/FFFFFF?text=DIX+Solutions&font=Oswald'">
                 </a>
                 <span class="hidden sm:inline text-gray-300">|</span>
                 <a href="http://www.dix-autrement.fr" target="_blank" class="text-dix-dark hover:text-dix-light transition-colors underline decoration-1 underline-offset-2">www.dix-autrement.fr</a>
@@ -933,6 +939,23 @@
             saveLocalData();
         }
 
+        // --- LOGS DE CONNEXION (SÉCURITÉ RGPD) ---
+        async function logConnection(email) {
+            try {
+                // Utilisation d'une API gratuite et fiable pour récupérer l'IP sans clé API
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                
+                await supabaseClient.from('logs_connexion').insert([{ 
+                    email: email, 
+                    adresse_ip: data.ip, 
+                    appareil: navigator.userAgent 
+                }]);
+            } catch (e) {
+                console.log("Log silencieux échoué"); // Échoue silencieusement pour ne pas bloquer l'utilisateur
+            }
+        }
+
         // --- SAS DE SÉCURITÉ ---
         async function verifyAccess() {
             const emailInput = document.getElementById('email-input').value.trim().toLowerCase();
@@ -942,6 +965,7 @@
             if (!emailInput) { errorMsg.innerText = "Veuillez renseigner un courriel."; errorMsg.classList.remove('hidden'); return; }
 
             if (emailInput.endsWith('@dix-autrement.fr') || emailInput === 'admin') {
+                logConnection(emailInput + " (Démo)");
                 grantAccess(emailInput + " (Démo)");
                 return;
             }
@@ -955,8 +979,13 @@
                 if (error) throw new Error("Erreur BDD");
 
                 const isAuth = data && data.some(row => row.email && row.email.toLowerCase().trim() === emailInput);
-                if (isAuth) grantAccess(emailInput);
-                else throw new Error("Non autorisé");
+                if (isAuth) {
+                    logConnection(emailInput);
+                    grantAccess(emailInput);
+                }
+                else {
+                    throw new Error("Non autorisé");
+                }
 
             } catch (err) {
                 errorMsg.innerText = err.message === "Non autorisé" ? "Adresse email non autorisée." : "Erreur technique BDD.";
