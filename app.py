@@ -7,12 +7,13 @@ from streamlit_folium import st_folium
 # Configuration de la page
 st.set_page_config(page_title="Dashboard Logistique DIX", page_icon="📊", layout="wide")
 
-# Styles personnalisés pour supprimer le gras inutile et harmoniser les couleurs
+# Styles personnalisés
 st.markdown("""
     <style>
     .main { font-family: 'Georgia', serif; }
     h1, h2, h3, h4 { font-family: 'Oswald', sans-serif; font-weight: 400 !important; text-transform: uppercase; color: #405F59; }
     [data-testid="stMetricValue"] { font-family: 'Oswald', sans-serif; font-weight: 400 !important; color: #549e39; }
+    .stCaption { font-style: italic; color: #7f8c8d; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -40,19 +41,37 @@ def fetch_data():
     return response.data
 
 def process_full_data(raw_data):
-    """ Transforme le JSON complexe en un DataFrame exploitable """
+    """ Transforme le JSON complexe en deux DataFrames : un pour les tournées, un pour les structures """
     processed_tours = []
+    processed_structures = {}
+    
     for row in raw_data:
         data_json = row.get("data_json", {})
         depot = data_json.get("depot", {})
         tours = data_json.get("tours", [])
         
+        struct_name = depot.get("name", "Non renseigné")
+        
+        # On alimente le dictionnaire unique des structures
+        if struct_name not in processed_structures:
+            processed_structures[struct_name] = {
+                "Structure": struct_name,
+                "Véhicule Principal": depot.get("vehicule", "Non précisé"),
+                "Énergie": depot.get("energie", ""),
+                "Chauffeur": depot.get("driver", "Non précisé"),
+                "Coût RH (€/h)": float(depot.get("cout_h", 0)),
+                "Surf. Prépa (m²)": float(depot.get("stock_prep", 0)),
+                "Surf. Sec (m²)": float(depot.get("stock_sec", 0)),
+                "Surf. Frais (m²)": float(depot.get("stock_frais", 0)),
+                "Surf. Négatif (m²)": float(depot.get("stock_neg", 0)),
+            }
+        
+        # On alimente la liste des tournées (sans l'utilisateur)
         for tour in tours:
             stats = tour.get("stats", {})
             processed_tours.append({
                 "ID_Dossier": row.get("id"),
-                "Utilisateur": row.get("nom_producteur", "Inconnu"),
-                "Structure": depot.get("name", "Non renseigné"),
+                "Structure": struct_name,
                 "Tournée": tour.get("name", "Sans nom"),
                 "Jour": tour.get("day", ""),
                 "Nb Arrêts": len(tour.get("stops", [])),
@@ -61,11 +80,13 @@ def process_full_data(raw_data):
                 "Coût Total (€)": round(stats.get("cost", 0), 2),
                 "Valeur (€)": round(stats.get("ca", 0), 2),
                 "Ratio (%)": float(stats.get("ratio", 0)),
-                # On garde les coordonnées brutes pour la carte
                 "coords_depot": [depot.get("lat"), depot.get("lon")],
                 "stops": tour.get("stops", [])
             })
-    return pd.DataFrame(processed_tours)
+            
+    df_tours = pd.DataFrame(processed_tours)
+    df_structs = pd.DataFrame(list(processed_structures.values()))
+    return df_tours, df_structs
 
 # ==========================================
 # 3. INTERFACE UTILISATEUR
@@ -78,18 +99,23 @@ with st.spinner("Synchronisation avec Supabase..."):
 if not raw_data:
     st.info("Aucune donnée disponible.")
 else:
-    df = process_full_data(raw_data)
+    df_tours, df_structs = process_full_data(raw_data)
     
-    # -- Filtres --
+    # -- Filtres avec Multiselect --
     st.sidebar.header("Filtres")
-    selected_structure = st.sidebar.selectbox("Structure", ["Toutes"] + list(df['Structure'].unique()))
-    selected_jour = st.sidebar.selectbox("Jour de passage", ["Tous"] + list(df['Jour'].unique()))
     
-    filtered_df = df.copy()
-    if selected_structure != "Toutes":
-        filtered_df = filtered_df[filtered_df['Structure'] == selected_structure]
-    if selected_jour != "Tous":
-        filtered_df = filtered_df[filtered_df['Jour'] == selected_jour]
+    all_structures = list(df_tours['Structure'].unique())
+    selected_structures = st.sidebar.multiselect("Sélectionner les Structures", all_structures, default=all_structures)
+    
+    all_jours = list(df_tours['Jour'].unique())
+    selected_jours = st.sidebar.multiselect("Jours de passage", all_jours, default=all_jours)
+    
+    # Filtrage des DataFrames
+    filtered_df = df_tours[
+        (df_tours['Structure'].isin(selected_structures)) & 
+        (df_tours['Jour'].isin(selected_jours))
+    ]
+    filtered_structs = df_structs[df_structs['Structure'].isin(selected_structures)]
 
     # -- KPIs --
     col1, col2, col3, col4 = st.columns(4)
@@ -106,7 +132,6 @@ else:
     # -- CARTE DES TOURNÉES --
     st.subheader("📍 Carte géographique des flux")
     
-    # Centre de la carte sur le premier dépôt trouvé
     if not filtered_df.empty:
         # On essaie de trouver un centre valide
         valid_coords = filtered_df[filtered_df['coords_depot'].map(lambda x: x[0] is not None)]
@@ -122,8 +147,7 @@ else:
             stops = row['stops']
             
             if depot_coords[0]:
-                # 1. Dessiner le tracé (PolyLine) reliant : Dépôt -> Arrêts -> Dépôt
-                # Note: Ce sont des lignes directes, pas le tracé exact de la route (OSRM)
+                # 1. Dessiner le tracé (PolyLine)
                 path_coords = [depot_coords]
                 for s in stops:
                     path_coords.append([s['lat'], s['lon']])
@@ -134,18 +158,18 @@ else:
                     color="#549e39",
                     weight=2,
                     opacity=0.5,
-                    dash_array='5, 10', # Style pointillé pour plus de légèreté
+                    dash_array='5, 10', 
                     tooltip=f"Tournée : {row['Tournée']}"
                 ).add_to(m)
 
-                # 2. Le Dépôt (Icône Maison)
+                # 2. Le Dépôt
                 folium.Marker(
                     location=depot_coords,
                     popup=f"Dépôt: {row['Structure']}",
                     icon=folium.Icon(color="darkgreen", icon="home", prefix="fa")
                 ).add_to(m)
             
-            # 3. Les Arrêts (Cercles numérotés)
+            # 3. Les Arrêts
             for i, stop in enumerate(stops):
                 folium.CircleMarker(
                     location=[stop['lat'], stop['lon']],
@@ -159,19 +183,37 @@ else:
         
         st_folium(m, width="100%", height=500, returned_objects=[])
     else:
-        st.warning("Sélectionnez au moins une structure pour afficher la carte.")
+        st.warning("Sélectionnez au moins une structure et un jour pour afficher la carte.")
 
     st.divider()
 
-    # -- TABLEAU DE DONNÉES --
-    st.subheader("📝 Détail des données")
-    # On masque les colonnes techniques pour le tableau
+    # -- NOUVEAU BLOC : DONNÉES DES STRUCTURES (Infrastructures) --
+    st.subheader("📦 Paramètres et Espaces de Stockage")
+    st.write("Synthèse des moyens logistiques engagés par les structures sélectionnées.")
+    st.dataframe(filtered_structs, use_container_width=True, hide_index=True)
+
+    st.divider()
+
+    # -- TABLEAU DE DONNÉES (TOURNÉES) --
+    st.subheader("📝 Détail des flux de transport")
+    # On masque les colonnes techniques pour l'affichage du tableau
     display_df = filtered_df.drop(columns=['coords_depot', 'stops', 'ID_Dossier'])
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
     st.download_button(
-        "📥 Exporter en CSV", 
+        "📥 Exporter les données de transport en CSV", 
         display_df.to_csv(index=False).encode('utf-8'), 
-        'export_logistique.csv', 
+        'export_flux_logistique.csv', 
         'text/csv'
     )
+
+    # ==========================================
+    # NOTE SUR L'USAGE DES DONNÉES
+    # ==========================================
+    st.divider()
+    st.caption("""
+        🛡️ **Note sur la confidentialité et l'usage des données** : 
+        Les informations présentées sur ce tableau de bord sont issues des simulations volontaires réalisées par les entrepreneurs via l'outil DIX. 
+        Elles sont collectées dans le but unique de favoriser la mutualisation logistique territoriale et de réduire l'empreinte environnementale des transports. 
+        Aucune donnée n'est cédée à des tiers à des fins commerciales.
+    """)
