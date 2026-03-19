@@ -117,9 +117,13 @@
                     <p class="text-dix-text font-georgia italic text-sm mt-1">Évaluation des flux et mutualisation des logistiques territoriales.</p>
                 </div>
             </div>
-            <div class="text-right border-l border-gray-200 pl-6 hidden md:block">
-                <span class="text-sm font-georgia text-gray-500">Connecté·e en tant que :</span><br>
-                <span id="user-display" class="font-bold text-dix-dark font-oswald tracking-wider"></span>
+            <div class="text-right border-l border-gray-200 pl-6 hidden md:block flex flex-col justify-center">
+                <span class="text-sm font-georgia text-gray-500">Connecté·e en tant que :</span>
+                <span id="user-display" class="font-bold text-dix-dark font-oswald tracking-wider block"></span>
+                <button onclick="clearLocalData()" class="text-xs text-red-400 hover:text-red-600 transition-colors mt-2 font-oswald flex items-center justify-end gap-1 ml-auto">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 
+                    RÉINITIALISER LE PROJET
+                </button>
             </div>
         </header>
 
@@ -134,7 +138,7 @@
                     
                     <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2">
                         <h2 class="text-lg text-dix-light font-oswald flex items-center">
-                            <!-- NOUVELLE ICÔNE (Maison / Foyer / Base) -->
+                            <!-- ICÔNE (Maison / Foyer / Base) -->
                             <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                             1. POINT DE DÉPART ET PARAMÈTRES
                         </h2>
@@ -145,7 +149,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div class="col-span-2 md:col-span-1">
                                 <label class="block font-semibold text-dix-text mb-1">Nom de la structure *</label>
-                                <input type="text" id="pName" placeholder="Ex: Ferme Coopérative" oninput="checkDepotValidity()" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light focus:outline-none">
+                                <input type="text" id="pName" placeholder="Ex: Ferme Coopérative" oninput="checkDepotValidity(); saveLocalData();" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light focus:outline-none">
                             </div>
                             <div class="col-span-2 md:col-span-1 relative">
                                 <label class="block font-semibold text-dix-text mb-1 flex items-center">
@@ -320,28 +324,28 @@
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"></path></svg> Préparation</span>
                                             <span id="val-prep" class="text-dix-light">0 m²</span>
                                         </div>
-                                        <input type="range" id="surfPrep" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-prep').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                        <input type="range" id="surfPrep" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-prep').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
                                         <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Sec (Ambiant)</span>
                                             <span id="val-sec" class="text-dix-light">0 m²</span>
                                         </div>
-                                        <input type="range" id="surfSec" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-sec').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                        <input type="range" id="surfSec" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-sec').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
                                         <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8z"></path></svg> Frais (2-6°C)</span>
                                             <span id="val-frais" class="text-dix-light">0 m²</span>
                                         </div>
-                                        <input type="range" id="surfFrais" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-frais').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                        <input type="range" id="surfFrais" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-frais').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
                                         <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"></path></svg> Négatif (< 0°C)</span>
                                             <span id="val-neg" class="text-dix-light">0 m²</span>
                                         </div>
-                                        <input type="range" id="surfNeg" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-neg').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'">
+                                        <input type="range" id="surfNeg" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-neg').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                 </div>
                             </details>
@@ -377,12 +381,12 @@
                     <div class="flex gap-3 mb-6 font-georgia text-sm">
                         <div class="flex-1">
                             <label class="block font-semibold text-dix-text mb-1">Nom de la Tournée *</label>
-                            <input type="text" id="tName" list="tourNameSuggestions" placeholder="Ex: Tournée des Écoles" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
+                            <input type="text" id="tName" list="tourNameSuggestions" placeholder="Ex: Tournée des Écoles" oninput="saveLocalData()" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
                             <datalist id="tourNameSuggestions"></datalist>
                         </div>
                         <div class="w-1/3">
                             <label class="block font-semibold text-dix-text mb-1">Jour</label>
-                            <select id="tDay" onchange="autoNameTour()" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                            <select id="tDay" onchange="autoNameTour(); saveLocalData();" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
                                 <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option>
                             </select>
                         </div>
@@ -682,6 +686,151 @@
             stock: { surfPrep: 0, surfSec: 0, surfFrais: 0, surfNeg: 0 }
         };
 
+        // --- GESTION LOCAL STORAGE (SAUVEGARDE EN CONTINU) ---
+        function saveLocalData() {
+            const data = {
+                pData: pData,
+                jobs: Array.from(document.querySelectorAll('#pJobMenu input[type="checkbox"]:checked')).map(cb => cb.value),
+                params: {
+                    vType: document.getElementById('vType').value,
+                    vFrigo: document.getElementById('vFrigo').checked,
+                    fType: document.getElementById('fType').value,
+                    vCons: document.getElementById('vCons').value,
+                    fPrice: document.getElementById('fPrice').value,
+                    vAmort: document.getElementById('vAmort').value,
+                    driverType: document.getElementById('driverType').value,
+                    tPrep: document.getElementById('tPrep').value,
+                    tLoad: document.getElementById('tLoad').value,
+                    cH: document.getElementById('cH').value,
+                    surfPrep: document.getElementById('surfPrep').value,
+                    surfSec: document.getElementById('surfSec').value,
+                    surfFrais: document.getElementById('surfFrais').value,
+                    surfNeg: document.getElementById('surfNeg').value,
+                    defTrans: document.getElementById('def-trans').checked,
+                    defRh: document.getElementById('def-rh').checked,
+                    defStock: document.getElementById('def-stock').checked
+                },
+                savedTours: savedTours,
+                currentTour: {
+                    stops: stops,
+                    tName: document.getElementById('tName').value,
+                    tDay: document.getElementById('tDay').value
+                }
+            };
+            localStorage.setItem('dix_demo_project_data', JSON.stringify(data));
+        }
+
+        function loadLocalData() {
+            const raw = localStorage.getItem('dix_demo_project_data');
+            if(!raw) return;
+            
+            try {
+                const data = JSON.parse(raw);
+                
+                // 1. Params
+                if(data.params) {
+                    document.getElementById('vType').value = data.params.vType || "Fourgon compact (3-6m³)";
+                    document.getElementById('vFrigo').checked = !!data.params.vFrigo;
+                    document.getElementById('fType').value = data.params.fType || "Diesel";
+                    document.getElementById('vCons').value = data.params.vCons || 8.5;
+                    document.getElementById('fPrice').value = data.params.fPrice || 1.75;
+                    document.getElementById('vAmort').value = data.params.vAmort || 0.25;
+                    
+                    document.getElementById('driverType').value = data.params.driverType || "Entrepreneur·euse Salarié·e (Soi-même)";
+                    document.getElementById('tPrep').value = data.params.tPrep || 30;
+                    document.getElementById('tLoad').value = data.params.tLoad || 20;
+                    document.getElementById('cH').value = data.params.cH || 20;
+                    
+                    document.getElementById('surfPrep').value = data.params.surfPrep || 0;
+                    document.getElementById('surfSec').value = data.params.surfSec || 0;
+                    document.getElementById('surfFrais').value = data.params.surfFrais || 0;
+                    document.getElementById('surfNeg').value = data.params.surfNeg || 0;
+                    
+                    ['Prep', 'Sec', 'Frais', 'Neg'].forEach(id => {
+                        let val = document.getElementById('surf' + id).value;
+                        document.getElementById('val-' + id.toLowerCase()).innerText = val >= 200 ? '> 200 m²' : val + ' m²';
+                    });
+
+                    if (data.params.defTrans !== undefined) {
+                        document.getElementById('def-trans').checked = data.params.defTrans;
+                        document.getElementById('box-trans').classList.toggle('opacity-50', data.params.defTrans);
+                        document.getElementById('box-trans').classList.toggle('pointer-events-none', data.params.defTrans);
+                    }
+                    if (data.params.defRh !== undefined) {
+                        document.getElementById('def-rh').checked = data.params.defRh;
+                        document.getElementById('box-rh').classList.toggle('opacity-50', data.params.defRh);
+                        document.getElementById('box-rh').classList.toggle('pointer-events-none', data.params.defRh);
+                    }
+                    if (data.params.defStock !== undefined) {
+                        document.getElementById('def-stock').checked = data.params.defStock;
+                        document.getElementById('box-stock').classList.toggle('opacity-50', data.params.defStock);
+                        document.getElementById('box-stock').classList.toggle('pointer-events-none', data.params.defStock);
+                    }
+                }
+                
+                // 2. Jobs
+                if(data.jobs && data.jobs.length > 0) {
+                    document.querySelectorAll('#pJobMenu input[type="checkbox"]').forEach(cb => {
+                        cb.checked = data.jobs.includes(cb.value);
+                    });
+                    const display = document.getElementById('pJobDisplay');
+                    if(data.jobs.length <= 2) { 
+                        display.innerText = data.jobs.join(", "); 
+                    } else { 
+                        display.innerText = data.jobs.length + " métiers sélectionnés"; 
+                    }
+                    display.classList.add('has-value');
+                }
+
+                // 3. Depot
+                if(data.pData && data.pData.lat) {
+                    pData = data.pData;
+                    document.getElementById('pName').value = pData.name;
+                    document.getElementById('pAddr').value = pData.addr;
+                    checkDepotValidity();
+                    
+                    document.getElementById('depot-form').classList.add('hidden');
+                    const summary = document.getElementById('depot-summary');
+                    summary.classList.remove('hidden'); summary.classList.add('flex');
+                    let selectedJobs = data.jobs.join(', ');
+                    document.getElementById('summary-content').innerHTML = `
+                        <svg class="w-4 h-4 inline-block mr-2 text-dix-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <b>${pData.name}</b> <span class="text-gray-400 text-xs inline-block ml-2 align-middle max-w-[150px] truncate" title="${selectedJobs}">(${selectedJobs})</span> - ${pData.addr.split(',')[0]}
+                    `;
+                    document.getElementById('tour-section').classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
+                    setMode('stop');
+                }
+                
+                // 4. Saved Tours
+                if(data.savedTours) {
+                    savedTours = data.savedTours;
+                    renderSavedTours();
+                }
+
+                // 5. Current Tour
+                if(data.currentTour) {
+                    stops = data.currentTour.stops || [];
+                    document.getElementById('tName').value = data.currentTour.tName || "";
+                    document.getElementById('tDay').value = data.currentTour.tDay || "Lundi";
+                    if(stops.length > 0 || pData.lat) {
+                        setTimeout(updateView, 250); 
+                    }
+                }
+
+                handleParamsChange(); 
+                
+            } catch(e) {
+                console.error("Erreur de parsing localStorage", e);
+            }
+        }
+
+        function clearLocalData() {
+            if(confirm("⚠️ Attention, cela va effacer toutes vos données en cours et réinitialiser le simulateur. Continuer ?")) {
+                localStorage.removeItem('dix_demo_project_data');
+                location.reload();
+            }
+        }
+
         // --- GESTION MULTISELECT METIERS ---
         function toggleJobMenu() { 
             const menu = document.getElementById('pJobMenu'); 
@@ -701,6 +850,7 @@
                 display.innerText = selected.length + " métiers sélectionnés"; display.classList.add('has-value'); 
             }
             checkDepotValidity();
+            saveLocalData();
         }
 
         function toggleDefaults(section, isDefault) {
@@ -719,6 +869,7 @@
             } else {
                 box.classList.remove('opacity-50', 'pointer-events-none');
             }
+            saveLocalData();
         }
 
         // --- SAS DE SÉCURITÉ ---
@@ -764,6 +915,10 @@
                 initSortable();
                 updateTourNameSuggestions();
                 autoNameTour();
+                
+                // Chargement des données sauvegardées
+                loadLocalData();
+
                 document.addEventListener("click", function(e) {
                     closeAllLists(e);
                     const menu = document.getElementById('pJobMenu');
@@ -900,6 +1055,7 @@
             const tourSec = document.getElementById('tour-section');
             tourSec.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
             setMode('stop'); setTimeout(() => map.invalidateSize(), 200);
+            saveLocalData();
         }
 
         function unlockDepot() {
@@ -907,6 +1063,7 @@
             document.getElementById('depot-form').classList.remove('hidden');
             document.getElementById('tour-section').classList.add('opacity-50', 'grayscale', 'pointer-events-none');
             setMode('prod');
+            saveLocalData();
         }
 
         function setMode(m) { 
@@ -957,6 +1114,7 @@
             stops = []; sTemp = { lat: null, lon: null };
             document.getElementById('sClient').value = ""; document.getElementById('sAddr').value = "";
             document.getElementById('tName').value = ""; autoNameTour(); updateView();
+            saveLocalData();
         }
 
         function addStop() {
@@ -974,6 +1132,7 @@
             document.getElementById('sAddr').value = ""; document.getElementById('sClient').value = "";
             document.getElementById('sEuro').value = "0"; document.getElementById('sTime').value = "15";
             updateView();
+            saveLocalData();
         }
 
         function editStop(index) { 
@@ -987,9 +1146,10 @@
             stops.splice(index, 1); 
             updateView(); 
             document.getElementById('sClient').focus(); 
+            saveLocalData();
         }
 
-        function removeStop(index) { stops.splice(index, 1); updateView(); }
+        function removeStop(index) { stops.splice(index, 1); updateView(); saveLocalData(); }
 
         function initSortable() {
             const el = document.getElementById('stops-list');
@@ -1002,7 +1162,7 @@
                             const found = stops.find(s=>s.id === parseInt(it.getAttribute('data-id'))); 
                             if(found) ns.push(found); 
                         }); 
-                        stops=ns; updateView();
+                        stops=ns; updateView(); saveLocalData();
                     }
                 });
             }
@@ -1186,6 +1346,7 @@
                 clearTimeout(calcTimeout);
                 calcTimeout = setTimeout(calcRoute, 400); 
             }
+            saveLocalData();
         }
 
         function recalcSavedTours() {
@@ -1227,6 +1388,7 @@
             
             updateTourNameSuggestions();
             renderSavedTours();
+            saveLocalData();
             
             document.getElementById('save-options-modal').classList.remove('hidden');
         }
@@ -1241,6 +1403,7 @@
                 let currentName = document.getElementById('tName').value;
                 if(!currentName.includes("(Variante)")) {
                     document.getElementById('tName').value = currentName + " (Variante)";
+                    saveLocalData();
                 }
             } else if (choice === 'finish') {
                 newTour(true);
@@ -1251,6 +1414,7 @@
         function removeSavedTour(id) {
             savedTours = savedTours.filter(t => t.id !== id);
             renderSavedTours();
+            saveLocalData();
         }
 
         function editSavedTour(id) {
@@ -1279,6 +1443,7 @@
             renderSavedTours();
             updateTourNameSuggestions();
             updateView();
+            saveLocalData();
             
             document.getElementById('tour-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
