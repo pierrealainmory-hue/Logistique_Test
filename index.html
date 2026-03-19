@@ -56,7 +56,7 @@
         .handle { cursor: grab; color: #9ca3af; font-size: 1.25rem; margin-right: 10px; }
         .handle:active { cursor: grabbing; }
 
-        .ratio-tag { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-align: center; font-family: 'Oswald', sans-serif;}
+        .ratio-tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; text-align: center; font-family: 'Oswald', sans-serif;}
         .ratio-good { background: #dcfce7; color: #166534; border: 1px solid #166534; }
         .ratio-mid { background: #fef08a; color: #854d0e; border: 1px solid #854d0e; }
         .ratio-bad { background: #fee2e2; color: #991b1b; border: 1px solid #991b1b; }
@@ -67,7 +67,7 @@
 
         /* Multiselect Tailwind personnalisé */
         .multiselect-input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 0.75rem; background: white; cursor: pointer; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #6b7280; }
-        .multiselect-input.has-value { color: #1f2937; font-weight: 600; }
+        .multiselect-input.has-value { color: #1f2937; }
         .multiselect-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 0.75rem; max-height: 250px; overflow-y: auto; z-index: 50; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 4px; }
         .multiselect-dropdown label { display: block; padding: 6px 12px; cursor: pointer; color: #374151; font-size: 0.875rem; }
         .multiselect-dropdown label:hover { background-color: #f3f4f6; }
@@ -81,13 +81,13 @@
     <div id="login-screen" class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 border border-gray-100 fade-in mt-20">
         <div class="text-center mb-8">
             <img src="logo-dix-demo.png" alt="Logo DIX" class="h-20 w-auto object-contain mx-auto mb-4 bg-dix-dark p-3 rounded-xl shadow-inner">
-            <h1 class="text-3xl text-dix-dark font-bold mb-2 tracking-wide font-oswald uppercase">Espace Démo</h1>
+            <h1 class="text-3xl text-dix-dark mb-2 tracking-wide font-oswald uppercase">Espace Démo</h1>
             <p class="text-dix-text text-sm font-georgia">Outil de diagnostic et de mutualisation logistique.</p>
         </div>
 
         <div class="space-y-6">
             <div>
-                <label for="email-input" class="block text-sm font-semibold text-dix-dark mb-2 font-oswald tracking-wide">COURRIEL D'ACCÈS</label>
+                <label for="email-input" class="block text-sm text-dix-dark mb-2 font-oswald tracking-wide">COURRIEL D'ACCÈS</label>
                 <input type="email" id="email-input" placeholder="votre.email@cooperative.fr" 
                     class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-dix-light transition-all shadow-sm font-georgia"
                     onkeypress="if(event.key === 'Enter') verifyAccess()">
@@ -113,13 +113,13 @@
             <div class="flex items-center gap-6">
                 <img src="logo-dix-demo.png" alt="Logo DIX" class="h-16 max-w-[200px] w-auto object-contain bg-dix-dark p-2 rounded-xl shadow-inner">
                 <div>
-                    <h1 class="text-2xl text-dix-dark font-bold tracking-wide font-oswald">DÉMO : LOGISTIQUE COOPÉRATIVE DE TERRITOIRE</h1>
+                    <h1 class="text-2xl text-dix-dark tracking-wide font-oswald">DÉMO : LOGISTIQUE COOPÉRATIVE DE TERRITOIRE</h1>
                     <p class="text-dix-text font-georgia italic text-sm mt-1">Évaluation des flux et mutualisation des logistiques territoriales.</p>
                 </div>
             </div>
             <div class="text-right border-l border-gray-200 pl-6 hidden md:block flex flex-col justify-center">
                 <span class="text-sm font-georgia text-gray-500">Connecté·e en tant que :</span>
-                <span id="user-display" class="font-bold text-dix-dark font-oswald tracking-wider block"></span>
+                <span id="user-display" class="text-dix-dark font-oswald tracking-wider block"></span>
                 <button onclick="clearLocalData()" class="text-xs text-red-400 hover:text-red-600 transition-colors mt-2 font-oswald flex items-center justify-end gap-1 ml-auto">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 
                     RÉINITIALISER LE PROJET
@@ -148,11 +148,11 @@
                         <!-- Identité -->
                         <div class="grid grid-cols-2 gap-3">
                             <div class="col-span-2 md:col-span-1">
-                                <label class="block font-semibold text-dix-text mb-1">Nom de la structure *</label>
+                                <label class="block text-dix-text mb-1">Nom de la structure *</label>
                                 <input type="text" id="pName" placeholder="Ex: Ferme Coopérative" oninput="checkDepotValidity(); saveLocalData();" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light focus:outline-none">
                             </div>
                             <div class="col-span-2 md:col-span-1 relative">
-                                <label class="block font-semibold text-dix-text mb-1 flex items-center">
+                                <label class="block text-dix-text mb-1 flex items-center">
                                     <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                                     Métiers (Plusieurs possibles) *
                                 </label>
@@ -182,7 +182,7 @@
                                 </div>
                             </div>
                             <div class="col-span-2 relative">
-                                <label class="block font-semibold text-dix-text mb-1">Adresse (Dépôt) *</label>
+                                <label class="block text-dix-text mb-1">Adresse (Dépôt) *</label>
                                 <div class="flex gap-2">
                                     <div class="w-full relative">
                                         <input type="text" id="pAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'prod')" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
@@ -219,7 +219,7 @@
                                 </summary>
                                 <div class="p-4 bg-white border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 opacity-50 pointer-events-none transition-opacity duration-300" id="box-trans">
                                     <div class="col-span-1 sm:col-span-2 flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1">Type de Véhicule</label>
+                                        <label class="block text-dix-light text-xs mb-1">Type de Véhicule</label>
                                         <div class="flex flex-col sm:flex-row gap-2">
                                             <select id="vType" onchange="handleParamsChange()" class="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-xs min-w-0">
                                                 <option>Petit utilitaire (< 3m³)</option>
@@ -228,13 +228,13 @@
                                                 <option>Petit camion (12-20m³)</option>
                                                 <option>Camion lourd (> 20m³)</option>
                                             </select>
-                                            <label class="flex justify-center items-center gap-1 bg-gray-50 sm:bg-white px-3 py-2 border border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-dix-dark whitespace-nowrap">
+                                            <label class="flex justify-center items-center gap-1 bg-gray-50 sm:bg-white px-3 py-2 border border-gray-300 rounded-xl cursor-pointer text-xs text-dix-dark whitespace-nowrap">
                                                 <input type="checkbox" id="vFrigo" onchange="handleParamsChange()" class="accent-dix-light w-4 h-4"> ❄️ Frigo
                                             </label>
                                         </div>
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                        <label class="block text-dix-light text-xs mb-1 flex items-center">
                                             <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Énergie
                                         </label>
                                         <select id="fType" onchange="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
@@ -242,19 +242,19 @@
                                         </select>
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                        <label class="block text-dix-light text-xs mb-1 flex items-center">
                                             <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2.25c-5.385 6.463-8.25 10.518-8.25 14.25a8.25 8.25 0 1016.5 0c0-3.732-2.865-7.787-8.25-14.25z"></path></svg> Conso. (L/kWh au 100)
                                         </label>
                                         <input type="number" id="vCons" value="8.5" step="0.1" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                        <label class="block text-dix-light text-xs mb-1 flex items-center">
                                             <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg> Prix (€/L ou /kWh)
                                         </label>
                                         <input type="number" id="fPrice" value="1.75" step="0.01" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1 flex items-center">
+                                        <label class="block text-dix-light text-xs mb-1 flex items-center">
                                             <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Amort. (€/km)
                                         </label>
                                         <input type="number" id="vAmort" value="0.25" step="0.01" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
@@ -281,21 +281,21 @@
                                 </summary>
                                 <div class="p-4 bg-white border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 opacity-50 pointer-events-none transition-opacity duration-300" id="box-rh">
                                     <div class="col-span-1 sm:col-span-2 flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1">Qui assure la tournée ?</label>
-                                        <select id="driverType" onchange="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-dix-dark font-bold">
+                                        <label class="block text-dix-light text-xs mb-1">Qui assure la tournée ?</label>
+                                        <select id="driverType" onchange="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs text-dix-dark">
                                             <option>Entrepreneur·euse Salarié·e (Soi-même)</option><option>Mutualisation : Salarié·e de la CAE</option><option>Prestataire externe</option>
                                         </select>
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1">Prépa (min)</label>
+                                        <label class="block text-dix-light text-xs mb-1">Prépa (min)</label>
                                         <input type="number" id="tPrep" value="30" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1">Charg. (min)</label>
+                                        <label class="block text-dix-light text-xs mb-1">Charg. (min)</label>
                                         <input type="number" id="tLoad" value="20" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <label class="block font-semibold text-dix-light text-xs mb-1">Coût RH (€/h)</label>
+                                        <label class="block text-dix-light text-xs mb-1">Coût RH (€/h)</label>
                                         <input type="number" id="cH" value="20" oninput="handleParamsChange()" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs border-dix-light bg-green-50">
                                     </div>
                                 </div>
@@ -320,28 +320,28 @@
                                 </summary>
                                 <div class="p-4 bg-white border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 opacity-50 pointer-events-none transition-opacity duration-300" id="box-stock">
                                     <div class="flex flex-col justify-end h-full">
-                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                        <div class="flex justify-between text-xs text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"></path></svg> Préparation</span>
                                             <span id="val-prep" class="text-dix-light">0 m²</span>
                                         </div>
                                         <input type="range" id="surfPrep" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-prep').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                        <div class="flex justify-between text-xs text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Sec (Ambiant)</span>
                                             <span id="val-sec" class="text-dix-light">0 m²</span>
                                         </div>
                                         <input type="range" id="surfSec" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-sec').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                        <div class="flex justify-between text-xs text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8z"></path></svg> Frais (2-6°C)</span>
                                             <span id="val-frais" class="text-dix-light">0 m²</span>
                                         </div>
                                         <input type="range" id="surfFrais" min="0" max="200" step="5" value="0" class="w-full accent-dix-light" oninput="document.getElementById('val-frais').innerText = this.value >= 200 ? '> 200 m²' : this.value + ' m²'; handleParamsChange();">
                                     </div>
                                     <div class="flex flex-col justify-end h-full">
-                                        <div class="flex justify-between text-xs font-bold text-dix-light mb-1">
+                                        <div class="flex justify-between text-xs text-dix-light mb-1">
                                             <span class="flex items-center"><svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"></path></svg> Négatif (< 0°C)</span>
                                             <span id="val-neg" class="text-dix-light">0 m²</span>
                                         </div>
@@ -381,12 +381,12 @@
 
                     <div class="flex gap-3 mb-6 font-georgia text-sm">
                         <div class="flex-1">
-                            <label class="block font-semibold text-dix-text mb-1">Nom de la Tournée *</label>
+                            <label class="block text-dix-text mb-1">Nom de la Tournée *</label>
                             <input type="text" id="tName" list="tourNameSuggestions" placeholder="Ex: Tournée des Écoles" oninput="saveLocalData()" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
                             <datalist id="tourNameSuggestions"></datalist>
                         </div>
                         <div class="w-1/3">
-                            <label class="block font-semibold text-dix-text mb-1">Jour</label>
+                            <label class="block text-dix-text mb-1">Jour</label>
                             <select id="tDay" onchange="autoNameTour(); saveLocalData();" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
                                 <option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option><option>Samedi</option>
                             </select>
@@ -400,11 +400,11 @@
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
                             <div class="col-span-1 sm:col-span-2">
-                                <label class="block font-semibold text-dix-light text-xs mb-1">Client / Lieu</label>
+                                <label class="block text-dix-light text-xs mb-1">Client / Lieu</label>
                                 <input type="text" id="sClient" placeholder="Ex: Biocoop Centre" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
                             </div>
                             <div class="col-span-1 sm:col-span-2">
-                                <label class="block font-semibold text-dix-light text-xs mb-1">Localisation</label>
+                                <label class="block text-dix-light text-xs mb-1">Localisation</label>
                                 <div class="flex gap-2 relative">
                                     <div class="w-full relative">
                                         <input type="text" id="sAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'stop')" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
@@ -419,7 +419,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block font-semibold text-dix-light text-xs mb-1">Type</label>
+                                <label class="block text-dix-light text-xs mb-1">Type</label>
                                 <select id="sOpType" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
                                     <option value="📦">📦 Livraison Client</option>
                                     <option value="🚜">🚜 Collecte</option>
@@ -427,11 +427,11 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block font-semibold text-dix-light text-xs mb-1">Valeur (€)</label>
+                                <label class="block text-dix-light text-xs mb-1">Valeur (€)</label>
                                 <input type="number" id="sEuro" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-xl bg-green-50 border-dix-light">
                             </div>
                             <div class="col-span-1 sm:col-span-2">
-                                <label class="block font-semibold text-dix-light text-xs mb-1">Temps Arrêt (min)</label>
+                                <label class="block text-dix-light text-xs mb-1">Temps Arrêt (min)</label>
                                 <input type="number" id="sTime" value="15" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
                             </div>
                         </div>
@@ -481,30 +481,30 @@
                      <div class="col-span-1 md:col-span-3 bg-dix-dark text-white p-4 rounded-2xl shadow-md flex justify-around items-center text-center">
                          <div>
                              <span class="block font-oswald text-xs opacity-80 tracking-widest">COÛT LOG. (TOURNÉE)</span>
-                             <span id="rTotal" class="block font-bold text-2xl">0.00 €</span>
+                             <span id="rTotal" class="block text-2xl">0.00 €</span>
                          </div>
                          <div class="hidden md:block w-px h-8 bg-white opacity-20"></div>
                          <div>
                              <span class="block font-oswald text-xs opacity-80 tracking-widest">VALEUR (TOURNÉE)</span>
-                             <span id="rVal" class="block font-bold text-2xl">0.00 €</span>
+                             <span id="rVal" class="block text-2xl">0.00 €</span>
                          </div>
                          <div class="hidden md:block w-px h-8 bg-white opacity-20"></div>
                          <div>
                              <span class="block font-oswald text-xs opacity-80 tracking-widest text-dix-light">RATIO</span>
-                             <span id="rRatio" class="block font-bold text-2xl text-dix-light">0.0 %</span>
+                             <span id="rRatio" class="block text-2xl text-dix-light">0.0 %</span>
                          </div>
                      </div>
                      <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                          <span class="block font-oswald text-[10px] text-gray-500 uppercase">Distance totale</span>
-                         <span id="rDist" class="block font-bold text-lg text-dix-dark">0 km</span>
+                         <span id="rDist" class="block text-lg text-dix-dark">0 km</span>
                      </div>
                      <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                          <span class="block font-oswald text-[10px] text-gray-500 uppercase">Frais Véhicule</span>
-                         <span id="rCostTrans" class="block font-bold text-lg text-dix-dark">0 €</span>
+                         <span id="rCostTrans" class="block text-lg text-dix-dark">0 €</span>
                      </div>
                      <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
                          <span class="block font-oswald text-[10px] text-gray-500 uppercase">Frais RH</span>
-                         <span id="rCostOps" class="block font-bold text-lg text-dix-dark">0 €</span>
+                         <span id="rCostOps" class="block text-lg text-dix-dark">0 €</span>
                      </div>
                 </div>
 
@@ -512,7 +512,7 @@
                 <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                     <div class="flex justify-between items-end mb-2">
                         <span class="font-oswald text-xs text-gray-500 uppercase">Répartition du temps de travail</span>
-                        <span id="rTotalTime" class="font-bold text-dix-dark text-lg">0h00</span>
+                        <span id="rTotalTime" class="text-dix-dark text-lg">0h00</span>
                     </div>
                     <!-- Barre de progression -->
                     <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
@@ -525,12 +525,12 @@
                             <span class="w-3 h-3 rounded-full bg-dix-light inline-block"></span> 
                             <span class="flex items-center">
                                 <!-- ICÔNE (Camion / Route) -->
-                                <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg> Route : <span id="val-route" class="font-bold text-gray-700 ml-1">0h00</span>
+                                <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8m-8 0a2 2 0 104 0m-4 0a2 2 0 114 0m2-2h2a2 2 0 002-2l-3-5h-5v7h4z"></path></svg> Route : <span id="val-route" class="text-gray-700 ml-1">0h00</span>
                             </span>
                         </div>
                         <div class="flex items-center gap-1">
                             <span class="w-3 h-3 rounded-full bg-dix-dark inline-block"></span> 
-                            <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Prépa & Arrêts : <span id="val-manu" class="font-bold text-gray-700 ml-1">0h00</span></span>
+                            <span class="flex items-center"><svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg> Prépa & Arrêts : <span id="val-manu" class="text-gray-700 ml-1">0h00</span></span>
                         </div>
                     </div>
                 </div>
@@ -561,24 +561,24 @@
                 <div class="flex justify-around items-center text-center">
                     <div>
                         <span class="block font-oswald text-xs text-gray-500 uppercase">COÛT TOTAL</span>
-                        <span id="gCost" class="block font-bold text-2xl text-dix-dark">0.00 €</span>
+                        <span id="gCost" class="block text-2xl text-dix-dark">0.00 €</span>
                     </div>
                     <div class="w-px h-12 bg-gray-200"></div>
                     <div>
                         <span class="block font-oswald text-xs text-gray-500 uppercase">VALEUR TOTALE</span>
-                        <span id="gVal" class="block font-bold text-2xl text-dix-dark">0.00 €</span>
+                        <span id="gVal" class="block text-2xl text-dix-dark">0.00 €</span>
                     </div>
                     <div class="w-px h-12 bg-gray-200"></div>
                     <div>
                         <span class="block font-oswald text-xs text-gray-500 uppercase text-dix-light">RATIO GLOBAL</span>
-                        <span id="gRatio" class="block font-bold text-2xl text-dix-light">0.0 %</span>
+                        <span id="gRatio" class="block text-2xl text-dix-light">0.0 %</span>
                     </div>
                 </div>
 
                 <!-- Colonne 2 : Volumes Physiques -->
                 <div class="flex flex-col justify-center items-center font-georgia text-gray-600 bg-gray-50 p-4 rounded-xl border border-gray-200 w-full h-full">
-                    <div class="mb-3 text-base flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg> Distance totale : <span id="gDist" class="font-bold text-dix-dark text-xl ml-2">0 km</span></div>
-                    <div class="text-base flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Temps de travail : <span id="gTime" class="font-bold text-dix-dark text-xl ml-2">0h00</span></div>
+                    <div class="mb-3 text-base flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg> Distance totale : <span id="gDist" class="text-dix-dark text-xl ml-2">0 km</span></div>
+                    <div class="text-base flex items-center"><svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Temps de travail : <span id="gTime" class="text-dix-dark text-xl ml-2">0h00</span></div>
                 </div>
 
                 <!-- Colonne 3 : Répartition -->
@@ -591,15 +591,28 @@
                     <div class="flex justify-between text-xs font-georgia text-gray-500">
                         <div class="flex items-center gap-1.5">
                             <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> 
-                            <span>Véhicule : <span id="gCostTrans" class="font-bold text-gray-700">0 €</span> (<span id="gPctTrans">0</span>%)</span>
+                            <span>Véhicule : <span id="gCostTrans" class="text-gray-700">0 €</span> (<span id="gPctTrans">0</span>%)</span>
                         </div>
                         <div class="flex items-center gap-1.5">
                             <span class="w-3 h-3 rounded-full bg-dix-dark inline-block"></span> 
-                            <span>Main d'œuvre : <span id="gCostRH" class="font-bold text-gray-700">0 €</span> (<span id="gPctRH">0</span>%)</span>
+                            <span>Main d'œuvre : <span id="gCostRH" class="text-gray-700">0 €</span> (<span id="gPctRH">0</span>%)</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- BOUTONS IMPORT / EXPORT CSV -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden" onchange="importCSV(event)">
+            <button onclick="document.getElementById('csv-file-input').click()" class="w-full bg-white border-2 border-dix-light text-dix-light font-oswald text-lg py-3 rounded-2xl shadow-sm hover:bg-green-50 transition-colors flex justify-center items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <span>IMPORTER DES TOURNÉES (CSV)</span>
+            </button>
+            <button onclick="exportCSV()" class="w-full bg-white border-2 border-dix-light text-dix-light font-oswald text-lg py-3 rounded-2xl shadow-sm hover:bg-green-50 transition-colors flex justify-center items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>EXPORTER LES TOURNÉES (CSV)</span>
+            </button>
         </div>
 
         <!-- BOUTON D'ENVOI (Lui aussi en pleine largeur) -->
@@ -607,6 +620,27 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             <span>TRANSMETTRE CE DOSSIER (DÉMO)</span>
         </button>
+
+        <!-- PIED DE PAGE AVEC MENTIONS LEGALES -->
+        <footer class="w-full mt-12 pt-8 border-t border-gray-200 flex flex-col items-center gap-5 pb-8">
+            <div class="flex flex-wrap justify-center items-center gap-3 sm:gap-5 text-sm text-gray-600 font-georgia">
+                <span>Outil conçu et réalisé par</span>
+                <a href="http://www.dix-autrement.fr" target="_blank" class="hover:opacity-80 transition-opacity">
+                    <img src="https://raw.githubusercontent.com/pierrealainmory-hue/logistique-data-projet/main/logo%20dix%20solutions.jpg" alt="Logo DIX Solutions" class="h-8 w-auto rounded object-contain" onerror="this.src='https://placehold.co/100x30/405F59/FFFFFF?text=DIX+Solutions&font=Oswald'">
+                </a>
+                <span class="hidden sm:inline text-gray-300">|</span>
+                <a href="http://www.dix-autrement.fr" target="_blank" class="text-dix-dark hover:text-dix-light transition-colors underline decoration-1 underline-offset-2">www.dix-autrement.fr</a>
+                <span class="hidden sm:inline text-gray-300">|</span>
+                <!-- COMPTEUR DE VISITE -->
+                <div class="flex items-center justify-center mt-2 sm:mt-0">
+                    <img src="https://visitor-badge.laobi.icu/badge?page_id=pierrealainmory-hue.logistique-catl&left_text=Visites&left_color=%232c3e50&right_color=%23e67e22" alt="Compteur de visites" class="h-5 w-auto shadow-sm rounded">
+                </div>
+            </div>
+            <div class="text-xs text-gray-400 text-center leading-relaxed font-georgia">
+                © 2025-2026 Cabinet DIX Autrement. Tous droits réservés.<br>
+                Toute reproduction, copie ou utilisation non autorisée de cet outil ou de son code source est strictement interdite.
+            </div>
+        </footer>
 
     </div>
 
@@ -648,7 +682,7 @@
                     <span>CRÉER UNE VARIANTE (GARDER LA CARTE)</span>
                 </button>
                 <button onclick="handleSaveOption('finish')" class="w-full bg-dix-dark text-white font-oswald py-3 rounded-xl hover:bg-opacity-90 transition-colors shadow-sm flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     <span>TERMINER ET VOIR LA SYNTHÈSE</span>
                 </button>
             </div>
@@ -660,7 +694,7 @@
         <div class="max-w-[1400px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center gap-3">
                 <svg class="w-8 h-8 text-yellow-500 animate-pulse flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <span class="font-georgia text-sm text-dix-dark font-bold">Vous avez des tournées enregistrées. N'oubliez pas de transmettre votre dossier pour finaliser la simulation !</span>
+                <span class="font-georgia text-sm text-dix-dark">Vous avez des tournées enregistrées. N'oubliez pas de transmettre votre dossier pour finaliser la simulation !</span>
             </div>
             <button id="btn-sticky-send" onclick="sendProjectData()" class="bg-dix-light text-white font-oswald px-6 py-2 rounded-xl hover:bg-green-600 transition-colors text-sm whitespace-nowrap shadow-md flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
@@ -805,7 +839,7 @@
                     let selectedJobs = data.jobs.join(', ');
                     document.getElementById('summary-content').innerHTML = `
                         <svg class="w-4 h-4 inline-block mr-2 text-dix-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                        <b>${pData.name}</b> <span class="text-gray-400 text-xs inline-block ml-2 align-middle max-w-[150px] truncate" title="${selectedJobs}">(${selectedJobs})</span> - ${pData.addr.split(',')[0]}
+                        <span>${pData.name}</span> <span class="text-gray-400 text-xs inline-block ml-2 align-middle max-w-[150px] truncate" title="${selectedJobs}">(${selectedJobs})</span> - ${pData.addr.split(',')[0]}
                     `;
                     document.getElementById('tour-section').classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
                     setMode('stop');
@@ -1059,7 +1093,7 @@
             // MISE À JOUR DE L'ICÔNE DANS LE RÉCAPITULATIF
             document.getElementById('summary-content').innerHTML = `
                 <svg class="w-4 h-4 inline-block mr-2 text-dix-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                <b>${pData.name}</b> <span class="text-gray-400 text-xs inline-block ml-2 align-middle max-w-[150px] truncate" title="${selectedJobs}">(${selectedJobs})</span> - ${pData.addr.split(',')[0]}
+                <span>${pData.name}</span> <span class="text-gray-400 text-xs inline-block ml-2 align-middle max-w-[150px] truncate" title="${selectedJobs}">(${selectedJobs})</span> - ${pData.addr.split(',')[0]}
             `;
             
             const tourSec = document.getElementById('tour-section');
@@ -1196,21 +1230,21 @@
                         <div class="flex items-center gap-3 overflow-hidden">
                             <span class="handle">☰</span><span class="text-xl">${s.icon}</span>
                             <div class="flex flex-col overflow-hidden">
-                                <span class="font-bold text-dix-dark truncate">${i+1}. ${s.client}</span>
+                                <span class="text-dix-dark truncate">${i+1}. ${s.client}</span>
                                 <span class="text-xs text-gray-500 truncate">${s.addr.split(',')[0]}</span>
                             </div>
                         </div>
                         <div class="flex flex-col items-end min-w-[90px]">
-                            <span class="font-bold text-dix-light">${s.euro} €</span>
+                            <span class="text-dix-light">${s.euro} €</span>
                             <span class="text-xs text-gray-400" id="dist-stop-${i}">... km</span>
                             <div class="ratio-tag bg-gray-100 text-gray-500" id="ratio-stop-${i}">...</div>
                         </div>
                         <div class="flex gap-1 ml-2">
                             <button onclick="editStop(${i})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1.5 rounded-lg" title="Modifier">✏️</button>
-                            <button onclick="removeStop(${i})" class="text-red-500 hover:text-red-700 font-bold bg-red-50 p-1.5 rounded-lg" title="Supprimer">✕</button>
+                            <button onclick="removeStop(${i})" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded-lg" title="Supprimer">✕</button>
                         </div>
                     </li>`;
-                const numIcon = L.divIcon({html:`<div style="background:#549e39; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.3); font-weight:bold; font-family:Oswald; font-size:12px;">${i+1}</div>`, className:'', iconSize:[24,24], iconAnchor:[12,12]});
+                const numIcon = L.divIcon({html:`<div style="background:#549e39; color:white; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.3); font-family:Oswald; font-size:12px;">${i+1}</div>`, className:'', iconSize:[24,24], iconAnchor:[12,12]});
                 L.marker([s.lat, s.lon], {icon: numIcon}).addTo(markers);
             });
 
@@ -1221,12 +1255,12 @@
                         <div class="flex items-center gap-3">
                             <svg class="w-6 h-6 text-dix-dark opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
                             <div class="flex flex-col">
-                                <span class="font-bold text-dix-dark">Retour au point de départ</span>
+                                <span class="text-dix-dark">Retour au point de départ</span>
                                 <span class="text-xs text-gray-500">${rShort}</span>
                             </div>
                         </div>
                         <div class="flex flex-col items-end min-w-[80px] mr-[88px]">
-                            <span id="return-cost" class="font-bold text-gray-500">0 €</span>
+                            <span id="return-cost" class="text-gray-500">0 €</span>
                             <span id="dist-return" class="text-xs text-gray-400">... km</span>
                         </div>
                     </li>`;
@@ -1345,7 +1379,7 @@
             
             const rElem = document.getElementById('rRatio');
             rElem.innerText = currentStats.ratio + " %";
-            rElem.className = "block font-bold text-2xl " + (currentStats.ratio < 10 ? "text-green-400" : (currentStats.ratio < 30 ? "text-yellow-400" : "text-red-400"));
+            rElem.className = "block text-2xl " + (currentStats.ratio < 10 ? "text-green-400" : (currentStats.ratio < 30 ? "text-yellow-400" : "text-red-400"));
         }
 
         // --- GESTION DES RECALCULS GLOBAUX ---
@@ -1495,18 +1529,18 @@
                     list.innerHTML += `
                         <li class="bg-white p-3 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
                             <div>
-                                <span class="font-bold text-dix-dark">${t.name}</span> <span class="text-xs text-gray-500">(${t.day})</span><br>
+                                <span class="text-dix-dark">${t.name}</span> <span class="text-xs text-gray-500">(${t.day})</span><br>
                                 <span class="text-xs text-gray-400">${t.stops.length} arrêt(s) - ${t.stats.dist.toFixed(1)} km</span>
                                 <div class="mt-1"><span class="ratio-tag ${rClass} text-[10px] inline-block">Ratio ${t.stats.ratio}%</span></div>
                             </div>
                             <div class="flex items-center gap-4">
                                 <div class="text-right flex flex-col items-end">
-                                    <span class="block text-[11px] font-bold text-dix-light">Valeur : ${t.stats.ca.toFixed(2)}€</span>
-                                    <span class="block text-[11px] font-bold text-red-400">Coût : ${t.stats.cost.toFixed(2)}€</span>
+                                    <span class="block text-[11px] text-dix-light">Valeur : ${t.stats.ca.toFixed(2)}€</span>
+                                    <span class="block text-[11px] text-red-400">Coût : ${t.stats.cost.toFixed(2)}€</span>
                                 </div>
                                 <div class="flex gap-1">
                                     <button onclick="editSavedTour(${t.id})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg" title="Modifier cette tournée">✏️</button>
-                                    <button onclick="removeSavedTour(${t.id})" class="text-red-500 hover:text-red-700 font-bold bg-red-50 p-2 rounded-lg" title="Supprimer">✕</button>
+                                    <button onclick="removeSavedTour(${t.id})" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg" title="Supprimer">✕</button>
                                 </div>
                             </div>
                         </li>`;
@@ -1532,6 +1566,132 @@
                 document.getElementById('gPctTrans').innerText = pctTrans;
                 document.getElementById('gPctRH').innerText = pctRH;
             }
+        }
+
+        // --- GESTION IMPORT / EXPORT CSV ---
+        function parseCSVRow(str) {
+            let result = [];
+            let cur = '';
+            let inQuote = false;
+            for (let i = 0; i < str.length; i++) {
+                if (str[i] === '"') {
+                    inQuote = !inQuote;
+                } else if (str[i] === ',' && !inQuote) {
+                    result.push(cur.trim());
+                    cur = '';
+                } else {
+                    cur += str[i];
+                }
+            }
+            result.push(cur.trim());
+            return result.map(s => s.replace(/^"|"$/g, '').replace(/""/g, '"'));
+        }
+
+        function exportCSV() {
+            if(savedTours.length === 0) return alert("Aucune tournée à exporter.");
+            
+            let csvRows = [];
+            // En-tête du fichier CSV
+            csvRows.push(["Tournee", "Jour", "Client", "Adresse", "Type", "Valeur_Euro", "Temps_Min", "Lat", "Lon"].join(','));
+            
+            savedTours.forEach(t => {
+                if(t.stops.length === 0) {
+                    csvRows.push([`"${t.name}"`, `"${t.day}"`, "", "", "", "", "", "", ""].join(','));
+                } else {
+                    t.stops.forEach(s => {
+                        csvRows.push([
+                            `"${t.name}"`, 
+                            `"${t.day}"`, 
+                            `"${(s.client||'').replace(/"/g, '""')}"`, 
+                            `"${(s.addr||'').replace(/"/g, '""')}"`, 
+                            `"${s.icon}"`, 
+                            s.euro, 
+                            s.time, 
+                            s.lat, 
+                            s.lon
+                        ].join(','));
+                    });
+                }
+            });
+            
+            // BOM UTF-8 pour forcer Excel à bien lire les accents
+            const csvString = "\uFEFF" + csvRows.join('\n'); 
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "mes_tournees_dix.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim().length > 0);
+                if(lines.length < 2) return alert("Fichier CSV invalide ou vide.");
+                
+                let newToursMap = {};
+                let countImported = 0;
+                
+                for(let i = 1; i < lines.length; i++) {
+                    const row = parseCSVRow(lines[i]);
+                    if(row.length < 2) continue;
+                    
+                    const tName = row[0] || "Tournée importée";
+                    const tDay = row[1] || "Lundi";
+                    
+                    if(!newToursMap[tName]) {
+                        newToursMap[tName] = {
+                            id: Date.now() + Math.random(),
+                            name: tName,
+                            day: tDay,
+                            stops: [],
+                            stats: { cost:0, ca:0, ratio:0, dist:0, time:0, driveTime: 0 }
+                        };
+                    }
+                    
+                    const client = row[2] || "";
+                    const addr = row[3] || "";
+                    const type = row[4] || "📦";
+                    const euro = parseFloat(row[5]) || 0;
+                    const time = parseFloat(row[6]) || 15;
+                    const lat = parseFloat(row[7]);
+                    const lon = parseFloat(row[8]);
+                    
+                    if(client && !isNaN(lat) && !isNaN(lon)) {
+                        newToursMap[tName].stops.push({
+                            id: Date.now() + Math.random(),
+                            client: client,
+                            addr: addr,
+                            icon: type,
+                            euro: euro,
+                            time: time,
+                            lat: lat,
+                            lon: lon
+                        });
+                        countImported++;
+                    }
+                }
+                
+                const importedTours = Object.values(newToursMap);
+                if(importedTours.length > 0) {
+                    savedTours = [...savedTours, ...importedTours];
+                    alert(`${importedTours.length} tournée(s) et ${countImported} arrêt(s) importés avec succès !\n\nAstuce : Chargez ces tournées sur la carte (bouton ✏️) pour recalculer automatiquement les distances et temps de trajet réels.`);
+                    updateTourNameSuggestions();
+                    renderSavedTours();
+                    saveLocalData();
+                } else {
+                    alert("Aucune donnée valide trouvée dans le fichier CSV.");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input pour permettre de réimporter le même fichier si besoin
         }
 
         async function sendProjectData() {
