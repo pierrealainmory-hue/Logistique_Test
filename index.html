@@ -80,7 +80,7 @@
     <!-- ========================================== -->
     <div id="login-screen" class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 border border-gray-100 fade-in mt-20">
         <div class="text-center mb-8">
-            <img src="logo-dix-demo.png" alt="Logo DIX" class="h-20 w-auto object-contain mx-auto mb-4" onerror="this.src='https://placehold.co/150x60/405F59/FFFFFF?text=DIX&font=Oswald'">
+            <img src="logo-dix-demo.png" alt="Logo DIX" class="h-20 w-auto object-contain mx-auto mb-4 bg-dix-dark p-3 rounded-xl shadow-inner">
             <h1 class="text-3xl text-dix-dark font-bold mb-2 tracking-wide font-oswald uppercase">Espace Démo</h1>
             <p class="text-dix-text text-sm font-georgia">Outil de diagnostic et de mutualisation logistique.</p>
         </div>
@@ -111,7 +111,7 @@
         <!-- HEADER -->
         <header class="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-dix-light flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-6">
-                <img src="logo-dix-demo.png" alt="Logo DIX" class="h-16 max-w-[200px] w-auto object-contain" onerror="this.src='https://placehold.co/150x60/405F59/FFFFFF?text=DIX&font=Oswald'">
+                <img src="logo-dix-demo.png" alt="Logo DIX" class="h-16 max-w-[200px] w-auto object-contain bg-dix-dark p-2 rounded-xl shadow-inner">
                 <div>
                     <h1 class="text-2xl text-dix-dark font-bold tracking-wide font-oswald">DÉMO : LOGISTIQUE COOPÉRATIVE DE TERRITOIRE</h1>
                     <p class="text-dix-text font-georgia italic text-sm mt-1">Évaluation des flux et mutualisation des logistiques territoriales.</p>
@@ -622,7 +622,13 @@
 
     <!-- MODAL OPTIONS APRES SAUVEGARDE -->
     <div id="save-options-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center fade-in">
-        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border-t-8 border-dix-light">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border-t-8 border-dix-light relative">
+            
+            <!-- BOUTON FERMER (CROIX) -->
+            <button onclick="document.getElementById('save-options-modal').classList.add('hidden');" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors" title="Fermer">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
             <div class="flex justify-center mb-4 text-dix-dark">
                 <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
             </div>
