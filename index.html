@@ -123,12 +123,18 @@
                     <p class="text-dix-text font-georgia italic text-sm mt-1">Évaluation des flux et mutualisation des logistiques territoriales.</p>
                 </div>
             </div>
-            <div class="text-right border-l border-gray-200 pl-6 hidden md:block flex flex-col justify-center">
-                <span class="text-sm font-georgia text-gray-500">Connecté·e en tant que :</span>
-                <span id="user-display" class="text-dix-dark font-oswald tracking-wider block"></span>
-                <button onclick="clearLocalData()" class="text-xs text-red-400 hover:text-red-600 transition-colors mt-2 font-oswald flex items-center justify-end gap-1 ml-auto">
+            <div class="text-right border-l border-gray-200 pl-6 hidden md:flex flex-col justify-center items-end gap-3">
+                <button onclick="startTutorial()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-oswald px-4 py-1.5 rounded-xl text-sm flex items-center gap-2 transition-colors shadow-sm animate-pulse">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    GUIDE RAPIDE
+                </button>
+                <div class="flex flex-col items-end leading-tight">
+                    <span class="text-xs font-georgia text-gray-500">Connecté·e en tant que :</span>
+                    <span id="user-display" class="text-dix-dark font-oswald tracking-wider block"></span>
+                </div>
+                <button onclick="clearLocalData()" class="text-xs text-red-400 hover:text-red-600 transition-colors font-oswald flex items-center justify-end gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 
-                    RÉINITIALISER LE PROJET
+                    RÉINITIALISER
                 </button>
             </div>
         </header>
@@ -189,9 +195,15 @@
                             </div>
                             <div class="col-span-2 relative">
                                 <label class="block text-dix-text mb-1">Adresse (Dépôt) *</label>
-                                <div class="flex gap-2">
+                                <div class="flex gap-2 relative">
+                                    <!-- INDICATEUR VISUEL DYNAMIQUE -->
+                                    <div id="hint-depot" class="hidden absolute -top-10 right-0 animate-bounce bg-blue-500 text-white text-[11px] tracking-wide font-oswald px-3 py-1.5 rounded-lg shadow-md z-20 pointer-events-none flex items-center gap-1 border border-blue-600">
+                                        CIBLEZ SUR LA CARTE <svg class="w-3 h-3 translate-y-[1px] rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        <div class="absolute -bottom-1 right-3 w-2.5 h-2.5 bg-blue-500 transform rotate-45 border-b border-r border-blue-600"></div>
+                                    </div>
+                                    
                                     <div class="w-full relative">
-                                        <input type="text" id="pAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'prod')" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
+                                        <input type="text" id="pAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'prod'); hideHint('hint-depot');" class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-dix-light">
                                         <div id="pAddr-list" class="autocomplete-items hidden"></div>
                                     </div>
                                     <button onclick="searchAddress('prod')" title="Rechercher l'adresse" class="bg-dix-light text-white px-3 rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center shadow-inner">
@@ -412,8 +424,14 @@
                             <div class="col-span-1 sm:col-span-2">
                                 <label class="block text-dix-light text-xs mb-1">Localisation</label>
                                 <div class="flex gap-2 relative">
+                                    <!-- INDICATEUR VISUEL DYNAMIQUE -->
+                                    <div id="hint-stop" class="hidden absolute -top-10 right-0 animate-bounce bg-blue-500 text-white text-[11px] tracking-wide font-oswald px-3 py-1.5 rounded-lg shadow-md z-20 pointer-events-none flex items-center gap-1 border border-blue-600">
+                                        AJOUTEZ UN POINT <svg class="w-3 h-3 translate-y-[1px] rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        <div class="absolute -bottom-1 right-3 w-2.5 h-2.5 bg-blue-500 transform rotate-45 border-b border-r border-blue-600"></div>
+                                    </div>
+                                    
                                     <div class="w-full relative">
-                                        <input type="text" id="sAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'stop')" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
+                                        <input type="text" id="sAddr" placeholder="Saisir et cliquer 🔍" oninput="handleAddressInput(event, 'stop'); hideHint('hint-stop');" class="w-full px-3 py-2 border border-gray-300 rounded-xl">
                                         <div id="sAddr-list" class="autocomplete-items hidden"></div>
                                     </div>
                                     <button onclick="searchAddress('stop')" title="Rechercher l'adresse" class="bg-dix-light text-white px-3 rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center shadow-inner">
@@ -712,6 +730,25 @@
         </div>
     </div>
 
+    <!-- MODAL TUTORIEL -->
+    <div id="tutorial-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[100] flex items-center justify-center fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative border-t-8 border-blue-500 mx-4">
+            <button onclick="closeTutorial()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="tuto-icon" class="flex justify-center mb-4 text-blue-500"></div>
+            <h2 id="tuto-title" class="font-oswald text-2xl text-dix-dark mb-3 text-center"></h2>
+            <p id="tuto-content" class="font-georgia text-gray-600 text-sm mb-8 text-center leading-relaxed"></p>
+            <div class="flex justify-between items-center">
+                <span id="tuto-progress" class="text-xs text-gray-400 font-oswald"></span>
+                <div class="flex gap-2">
+                    <button id="tuto-btn-prev" onclick="prevTutoStep()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-oswald hover:bg-gray-200 transition-colors hidden">PRÉCÉDENT</button>
+                    <button id="tuto-btn-next" onclick="nextTutoStep()" class="px-6 py-2 bg-blue-500 text-white rounded-xl font-oswald hover:bg-blue-600 shadow-md transition-colors">SUIVANT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- BANDEAU STICKY RAPPEL ENVOI -->
     <div id="sticky-send-banner" class="hidden fixed bottom-0 left-0 w-full bg-white border-t-4 border-dix-light p-4 shadow-[0_-10px_20px_rgba(0,0,0,0.15)] z-40 transition-transform duration-500 transform translate-y-full">
         <div class="max-w-[1400px] mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -745,6 +782,16 @@
         let typingTimer;
         let calcTimeout;
         let sortableInstance = null;
+
+        // --- GESTION DES INDICATEURS VISUELS ---
+        function showHint(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+        function hideHint(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
 
         // --- GESTION DES VALEURS PAR DEFAUT (ACCORDEONS) ---
         const defaultValues = {
@@ -941,18 +988,32 @@
 
         // --- LOGS DE CONNEXION (SÉCURITÉ RGPD) ---
         async function logConnection(email) {
+            let userIP = "Inconnue (Bloquée par le navigateur)";
+            
             try {
-                // Utilisation d'une API gratuite et fiable pour récupérer l'IP sans clé API
+                // Tentative de récupération de l'IP (peut être bloquée par AdBlock)
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
-                
-                await supabaseClient.from('logs_connexion').insert([{ 
+                userIP = data.ip;
+            } catch (e) {
+                console.warn("L'adresse IP n'a pas pu être récupérée (Bloqueur de pub activé).");
+            }
+            
+            try {
+                // Envoi des données dans Supabase (même si l'IP est bloquée)
+                const { error } = await supabaseClient.from('logs_connexion').insert([{ 
                     email: email, 
-                    adresse_ip: data.ip, 
+                    adresse_ip: userIP, 
                     appareil: navigator.userAgent 
                 }]);
+                
+                if (error) {
+                    console.error("Erreur Supabase (Logs) :", error.message);
+                } else {
+                    console.log("Log de connexion enregistré avec succès !");
+                }
             } catch (e) {
-                console.log("Log silencieux échoué"); // Échoue silencieusement pour ne pas bloquer l'utilisateur
+                console.error("Erreur technique lors de l'enregistrement du log :", e);
             }
         }
 
@@ -1009,6 +1070,14 @@
                 // Chargement des données sauvegardées
                 loadLocalData();
 
+                // Lancement auto du tuto si c'est la toute première fois
+                if(!localStorage.getItem('dix_tuto_vu')) {
+                    startTutorial();
+                } else if (!pData.lat) {
+                    // Si le tuto a déjà été vu mais que le dépôt n'est pas placé
+                    setTimeout(() => showHint('hint-depot'), 1000);
+                }
+
                 document.addEventListener("click", function(e) {
                     closeAllLists(e);
                     const menu = document.getElementById('pJobMenu');
@@ -1038,6 +1107,9 @@
         }
 
         function onMapClick(e) {
+            hideHint('hint-depot');
+            hideHint('hint-stop');
+            
             let lat = e.latlng.lat, lon = e.latlng.lng; 
             if(mode === 'prod') {
                 pData = { lat: lat, lon: lon, addr: "Recherche en cours..." };
@@ -1146,6 +1218,11 @@
             tourSec.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
             setMode('stop'); setTimeout(() => map.invalidateSize(), 200);
             saveLocalData();
+            
+            // Affiche l'indicateur pour le prochain arrêt si la tournée est vide
+            if (stops.length === 0) {
+                setTimeout(() => showHint('hint-stop'), 500);
+            }
         }
 
         function unlockDepot() {
@@ -1158,6 +1235,9 @@
 
         function setMode(m) { 
             mode = m; 
+            if(m === 'prod') hideHint('hint-depot');
+            if(m === 'stop') hideHint('hint-stop');
+            
             const activeClass = 'bg-dix-light text-white px-3 rounded-xl transition-colors flex items-center justify-center shadow-inner';
             const inactiveClass = 'bg-gray-200 text-gray-600 px-3 rounded-xl hover:bg-gray-300 transition-colors flex items-center justify-center';
             
@@ -1802,6 +1882,79 @@
                     if(stickySpan) stickySpan.innerText = originalStickyText;
                     stickyBtn.classList.remove('opacity-50', 'pointer-events-none');
                 }
+            }
+        }
+
+        // --- GESTION DU TUTORIEL ---
+        const tutoSteps = [
+            {
+                icon: `<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                title: "BIENVENUE SUR LE SIMULATEUR",
+                content: "Cet outil vous permet de modéliser vos tournées de livraison, d'en calculer les coûts réels (véhicule + main d'œuvre) et d'évaluer votre ratio logistique."
+            },
+            {
+                icon: `<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12h-3m-12 0H3m9 9v-3m0-12V3"></path></svg>`,
+                title: "UTILISATION DE LA CARTE",
+                content: "Plutôt que de taper chaque adresse manuellement, <b>activez la cible sur la carte</b> !<br><br>Cliquez sur l'icône <svg class='w-5 h-5 inline text-gray-700 bg-gray-200 rounded p-0.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'></path><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 12h-3m-12 0H3m9 9v-3m0-12V3'></path></svg> à côté de la loupe, puis <b>cliquez n'importe où sur la carte</b> pour définir instantanément votre point de départ ou l'adresse d'un client."
+            },
+            {
+                icon: `<svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>`,
+                title: "LES RÉSULTATS",
+                content: "À chaque ajout d'arrêt, l'outil recalcule la distance, le temps de trajet réel, et la part des coûts de transport par rapport à la valeur de votre marchandise.<br><br>Une fois vos tournées enregistrées, n'oubliez pas de cliquer sur <b>Transmettre ce dossier</b> tout en bas !"
+            }
+        ];
+
+        let currentTutoStep = 0;
+
+        function startTutorial() {
+            currentTutoStep = 0;
+            document.getElementById('tutorial-modal').classList.remove('hidden');
+            renderTutoStep();
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorial-modal').classList.add('hidden');
+            localStorage.setItem('dix_tuto_vu', 'true');
+            
+            if (!pData.lat) {
+                setTimeout(() => showHint('hint-depot'), 500);
+            }
+        }
+
+        function nextTutoStep() {
+            if(currentTutoStep < tutoSteps.length - 1) {
+                currentTutoStep++;
+                renderTutoStep();
+            } else {
+                closeTutorial();
+            }
+        }
+
+        function prevTutoStep() {
+            if(currentTutoStep > 0) {
+                currentTutoStep--;
+                renderTutoStep();
+            }
+        }
+
+        function renderTutoStep() {
+            const step = tutoSteps[currentTutoStep];
+            document.getElementById('tuto-icon').innerHTML = step.icon;
+            document.getElementById('tuto-title').innerHTML = step.title;
+            document.getElementById('tuto-content').innerHTML = step.content;
+            
+            document.getElementById('tuto-progress').innerText = `Étape ${currentTutoStep + 1} / ${tutoSteps.length}`;
+            
+            const btnPrev = document.getElementById('tuto-btn-prev');
+            const btnNext = document.getElementById('tuto-btn-next');
+            
+            if(currentTutoStep === 0) btnPrev.classList.add('hidden');
+            else btnPrev.classList.remove('hidden');
+            
+            if(currentTutoStep === tutoSteps.length - 1) {
+                btnNext.innerText = "C'EST PARTI !";
+            } else {
+                btnNext.innerText = "SUIVANT";
             }
         }
     </script>
